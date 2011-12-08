@@ -1,8 +1,12 @@
+TODO: MomentumParamUpdater
+
 TODO: 3-way parameters en 3-way factored parameters - veranderen er nog andere dingen?
 
 TODO: gaussian units (sigma=1)
 
 TODO: truncated exponential units
+
+TODO: PCDStatsCollector (persistent CD)
 
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN
@@ -11,7 +15,9 @@ TODO: wat glue code om RBMs te stacken in DBNs.
 
 TODO: passen autoencoders ook binnen dit raamwerk? mss moeten bepaalde dingen dan hernoemd worden...
 
-TODO: github?
+TODO: docs: what are the different components and their roles, what are vmaps, umaps, dmaps, ..., and what are the interfaces the different components adhere to (f.e. the 'cd' keyword argument for samplers)
+
+TODO: cleanup: remove some comments that are irrelevant
 
 TODO: optimised 1D convolution    
     
@@ -24,33 +30,18 @@ TODO: gaussian units met learnt variance (gescheiden en samen)
   
 TODO: symmetric beta units
 
+TODO: in a conditional RBM (f.e. with visibles v, hiddens h and context x), CD won't work if the context variable isn't supplied. This is because CD will try to update the parameters tying h/v and x regardless of whether x was supplied as context. It would be nice if this didn't happen, i.e. when x is not supplied as context, all parameters tying x are simply ignored. This would also avoid some hard-to-decipher error messages.
 
 
-
-- idee voor later: hierbij ook een 'chunking' framework voegen dat data in grote chunks kan omzetten voor efficient trainen op de GPU? + ook snapshotting erin verwerken? Dat zou voor een vrij compleet en proper framework zorgen.
-
-* TODO: write some nice latex documentation that explains all the different components and how they fit together, and especially which parts of the training/sampling algorithms they implement.
-
-
-
-
-geef aan de statscollector een lijst van Units objecten die de VISIBLES voorstellen, maw alle units die de data voorstellen en die dus initieel waarden zullen aannemen.
-
-Bepaal dan, a.h.v. de parameters-objecten, welke types units allemaal gesampled moeten worden (welke units de HIDDENS voorstellen).
-
-- dit hoeven niet noodzakelijk alle overblijvende units te zijn denk ik.
-- eerst bepalen we alle Parameters objecten die de visible units beinvloeden, en dan zoeken we alle ANDERE units die ook door deze parameters beinvloed worden.
-- als er bij de HIDDENS units zitten die ook bij de VISIBLES zitten, dan is er iets mis. Dan is er namelijk een afhankelijkheid tussen de visibles. exceptie gooien!
-
-- als er Parameters zijn die types HIDDENS verbinden, dan is er ook iets mis. Dan is er namelijk een afhankelijkheid tussen de hiddens. Exceptie gooien! (vb. aWb, bVc en cUa kan niet, we kunnen nooit b en c op basis van a samplen omdat ze niet onafhankelijk zijn van elkaar) - "
-
-- een geval waarbij de hiddens niet 'alle overblijvende units' zijn, is waar er 2 types visibles zijn, die niet tegelijkertijd gesampled moeten worden maar wel dezelfde HIDDENS delen. Dit kan bvb een soort van parameter sharing zijn.
+- idee voor later: hierbij ook een 'chunking' framework voegen dat data in grote chunks kan omzetten voor efficient trainen op de GPU, + snapshotting
 
 
 
 
 
 
+
+*** PRELIMINARY DOCUMENTATION ***
 
 TRAINING
 
@@ -60,20 +51,8 @@ split into multiple phases:
   * for CD-k, this is input visibles, sampled hiddens, and then visibles and hiddens after k steps
   * for PCD, the negative term is different
 - use statistics to compute the weight updates
-  * for all types of CD, this is just getting the update form from the Parameters object and filling in the blanks.
+  * for all types of CD, this is just getting the 'gradient' from the Parameters object and filling in the blanks.
 - update the weights according to some other hyperparameterised settings (this is where momentum, weight decay etc. are)
-
-
-trainingalgoritme abstraheren
-  - gradient descent with stopping criterion
-  - gradient descent with fixed number of epochs
-  - gradient descent ad infinitum
-  - zijn er nog?
-  - dit roept dan gewoon de paramupdaters op
-wat met monitoring costs?
-
-
-So let's build a hierarchy.
 
 ParamUpdater: composite object (possibly consisting of multiple other ParamUpdaters that are somehow combined (typical usecase: updates are summed)) that updates parameters given some input data
 
@@ -90,11 +69,10 @@ SparsityParamUpdater: encapsulates sparsity target regularisation
 
 SumParamUpdater: sums the updates obtained from its child paramupdaters. should check that the composing ParamUpdaters are for the same Parameters!
 
-ScaledParamUpdater: takes a ParamUpdater and a scale factor, and scales the updates by this factor. This will be the result of writing '0.005 * ParamUpdater()' for example.
+ScaleParamUpdater: takes a ParamUpdater and a scale factor, and scales the updates by this factor. This will be the result of writing '0.005 * ParamUpdater()' for example.
 
-  
 
-StatsCollector: object that collects the statistics for CD, given input
+StatsCollector: object that collects statistics (typically for CD), given input
 
 CDStatsCollector(k) < StatsCollector: collects statistics for CD-k
 
@@ -102,43 +80,15 @@ PCDStatsCollector < StatsCollector: collects statistics for PCD
 
 !! since only the negative term differs between CDStatsCollector and PCDStatsCollector, maybe some overlapping code can be factored out here.
 
-- learning rate: should this be a ParamUpdater, or should it be kept outside? it's nice to be able to encapsulate this...
 
-TO IMPLEMENT:
-X base class ParamUpdater(Parameters p, [StatsCollector s])
-- subclasses:
-  X DecayParamUpdater(Parameters p)
-  * MomentumParamUpdater(ParamUpdater pu)
-  X CDParamUpdater(Parameters p, StatsCollector s)
-  * SparsityTargetParamUpdater(Parameters p, StatsCollector s, target) # this also needs stats!
-  * VarianceTargetParamUpdater(Parameters p, target) # maybe, as an exercise, since it doesn't really work anyway
-  X SumParamUpdater([ParamUpdater p])
-      X Maybe overload + on ParamUpdater
-      X also maybe overload some_float * ParamUpdater, with __rmul__ (also implement __mul__). That's a nice way to do regularisation parameters and learning rates (then they don't have to handled inside the ParamUpdater object itself)
-  
-- base class StatsCollector
-- subclasses:
-  X CDkStatsCollector(k)
-  * PCDStatsCollector  
+update process:
 
-
-
-
-PROBLEM: multiple Parameters should be updated using the same collected stats, so the statscollector should only be run once per group of parameters. How can this be guaranteed if each ParamUpdater updates only a single Parameters object?
-Does it make sense instead to let a ParamUpdater update a group of Parameters objects?
-
-SOLUTION: maybe split the update process in a number of phases:
-
-- first, all ParamUpdaters (which each update ONLY ONE Parameters object) are inspected, and the StatsCollector objects they use are extracted: ParamUpdater.get_collectors() or something like that
+- first, all ParamUpdaters (which each update ONLY ONE Parameters object) are inspected, and the StatsCollector objects they use are extracted: ParamUpdater.stats_collectors
 - then iterate:
   * collect stats: run the extracted StatsCollectors (StatsCollector.collect() or something)
   * run ParamUpdaters
-    - each ParamUpdater calls StatsCollector.get_stats() or get_current_stats() or something to that extent.
-  * That way, each type of stats collection happens only once and all params are updated based on the same stats. We just need to make sure that they each hold a reference to the same StatsCollector object.
-
-
-
-
+    - each ParamUpdater calls StatsCollector.stats
+  * That way, each collector is only run once per update step, and all params are updated based on the same stats. We just need to make sure that they all hold a reference to the same StatsCollector object.
 
 
 MODULAR RBM
@@ -160,7 +110,6 @@ Parameters(list<Units> units)
     - contribution to activation of each of the Units
     - contribution to the energy function
 
-
 RBM
   has
     - list<Units>: a set of different types of units
@@ -180,43 +129,11 @@ get unit values (this goes for all unit types):
       
 Computing a linear activation consists of summing all the contributions of the different Parameters
 
-a Sampler can just be the identify function (mean field, to get truncated exponential units) or a bernoulli sampler (most common), a softmax sampler, a max-pooling sampler, ...
-
-Base classes: ActivationFunction, Sampler, Units, Parameters
-
-Ideally, there would be no clear distinction between visibles and hiddens in the lowest layers of abstraction - allowing for more advanced models like the 3-way factored RBM to be implemented. The visibles-hiddens distinction is a useful abstraction for many types of RBMs however, so it should be implemented on top (maybe have an RBM class and a vhRBM subclass).
+a Sampler can just be the identity function (mean field) or a bernoulli sampler (most common), a softmax sampler, a max-pooling sampler, ...
 
 
-Units, ActivationFunction and Sampler are AWARE of the RBM they are part of - most of the logic is concentrated in the subclasses. while this does bring some dependencies that could technically be avoided, it should lead to a cleaner architecture. It's also nicer to be able to do rbm.units['v'].sample(h_data), for example.
+Units, ActivationFunction and Sampler are AWARE of the RBM they are part of - most of the logic is concentrated in the subclasses. while this does bring some dependencies that could technically be avoided, it should lead to a cleaner architecture.
 
 
-
-
-
-
-
-
-implement a system where different types of units, weights and sampling can be combined easily. If it's performant that's a plus, but it doesn't have to be (mainly for experimentation). This will make it easier to construct heterogeneous models like the TransRBM or (different types of) the ChromaRBM.
-- determine the elementary operations that can be performed on an RBM, with their inputs and outputs
-    * sample hiddens
-    * sample visibles
-    * compute activation
-
-- determine the axes of variation, i.e. what can be done differently to create a new type of model:
-    * the way the activations are computed
-    * the way samples are drawn
-    * the types of parameters (weights, biases, convolutional, ...)
-    * the learning algorithm itself (CD, persistent CD, ...)
-    
-- it would be good if certain hyperparameters (like the learning rate for different sets of trainable parameters)
-
-
-
-elementary RBM operations:
-  - train using CD-n, given unlabeled visibles data
-  - sample visibles from hiddens
-  - sample hiddens from visibles
-  
-  
-  
+implement a system where different types of units, weights and sampling can be combined easily. If it's performant that's a plus, but it doesn't have to be (mainly for experimentation). This will make it easier to construct heterogeneous models.
 
