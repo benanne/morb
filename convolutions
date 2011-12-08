@@ -1,0 +1,81 @@
+W + 0.001 * (conv(v, sigmoid(conv(v, W) + bh)) - conv(sigmoid(conv + bv), sigmoid(conv + bh)))
+
+
+
+# conv input is (mb_size, input_maps, input height [numrows], input width [numcolumns])
+# conv input is (output_maps, input_maps, filter height [numrows], filter width [numcolumns])
+# conv output is (mb_size, output_maps, output height [numrows], output width [numcolumns])
+
+self.W = W # (hidden_maps, visible_maps, filter_height, filter_width)
+self.vu = units_list[0] # (mb_size, visible_maps, visible_height, visible_width)
+self.hu = units_list[1] # (mb_size, hidden_maps, hidden_height, hidden_width)
+
+
+hd = h0.dimshuffle(1,0,2,3)
+conv(v0, hd)
+
+v0: (mb_size, visible_maps, visible_height, visible_width)
+h0: (mb_size, hidden_maps, visible_height - filter_height + 1, visible_width - filter_width + 1)
+
+hd: (hidden_maps, mb_size, visible_height - filter_height + 1, visible_width - filter_width + 1)
+
+
+
+
+conv INPUT 1 (inputs):
+mb_size = mb_size
+input_maps = visible_maps
+input_height = visible_height
+input_width = visible_width
+
+conv INPUT 2 (filters):
+output_maps = hidden_maps
+input_maps = mb_size
+filter_height = visible_height - filter_height + 1
+filter_width = visible_width - filter_width + 1
+
+conv OUTPUT (outputs):
+mb_size = mb_size
+output_maps = hidden_maps
+output_height = filter_height
+output_width = filter_width
+
+
+DESIRED OUTPUT: (hidden_maps, visible_maps, filter_height, filter_width)
+
+
+
+-------------
+
+v0: (mb_size, visible_maps, visible_height, visible_width)
+h0: (mb_size, hidden_maps, visible_height - filter_height + 1, visible_width - filter_width + 1)
+
+vd: (visible_maps, mb_size, visible_height, visible_width)
+hd: (hidden_maps, mb_size, visible_height - filter_height + 1, visible_width - filter_width + 1)
+
+
+
+
+conv INPUT 1 (inputs): dimshuffle(1, 0, 2, 3)
+mb_size = visible_maps
+input_maps = mb_size
+input_height = visible_height
+input_width = visible_width
+
+conv INPUT 2 (filters): dimshuffle(1, 0, 2, 3)
+output_maps = hidden_maps
+input_maps = mb_size
+filter_height = visible_height - filter_height + 1
+filter_width = visible_width - filter_width + 1
+
+conv OUTPUT (outputs):
+mb_size = visible_maps
+output_maps = hidden_maps
+output_height = filter_height
+output_width = filter_width
+
+
+en dan nog de output dimshuffle(1, 0, 2, 3) en we zijn er!
+
+DESIRED OUTPUT: (hidden_maps, visible_maps, filter_height, filter_width)
+
