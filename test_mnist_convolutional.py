@@ -107,7 +107,7 @@ initial_vmap = { rbm.v: T.tensor4('v') }
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=10, monitors=[m, e_data, e_model], name='train', mode=mode)
-evaluate = t.compile_function(initial_vmap, mb_size=10, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', update=False, mode=mode)
+evaluate = t.compile_function(initial_vmap, mb_size=10, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', train=False, mode=mode)
 
 
 
@@ -122,7 +122,7 @@ def plot_data(d):
 
 
 def sample_evolution(start, ns=100): # start = start data
-    sample = t.compile_function(initial_vmap, mb_size=1, monitors=[m_model], name='evaluate', update=False, mode=mode)
+    sample = t.compile_function(initial_vmap, mb_size=1, monitors=[m_model], name='evaluate', train=False, mode=mode)
     
     data = start
     plot_data(data)

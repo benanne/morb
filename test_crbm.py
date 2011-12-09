@@ -60,7 +60,7 @@ initial_vmap = { rbm.v: T.matrix('v'), rbm.x: T.matrix('x') }
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce], name='train', mode=mode)
-evaluate = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce], name='evaluate', mode=mode)
+evaluate = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce], train=False, name='evaluate', mode=mode)
 
 epochs = 200
 print ">> Training for %d epochs..." % epochs

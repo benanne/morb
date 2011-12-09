@@ -37,11 +37,13 @@ rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 sc = stats_collectors.CDkStatsCollector(rbm, input_units=[rbm.v], latent_units=[rbm.h], k=1)
 
 umap = {}
-for params in rbm.params_list:
+
+for params, shape in zip([rbm.W, rbm.bv, rbm.bh], [[(rbm.n_visible, rbm.n_hidden)], [(rbm.n_visible,)], [(rbm.n_hidden,)]]):
     # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
     pu = param_updaters.CDParamUpdater(params, sc)
-    pu =  0.0002 * param_updaters.MomentumParamUpdater(pu, 0.9)
+    pu =  0.0001 * param_updaters.MomentumParamUpdater(pu, 0.9, shape)
     umap[params] = pu
+    
 
  
 t = trainers.MinibatchTrainer(rbm, umap)

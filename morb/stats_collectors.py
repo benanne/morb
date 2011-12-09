@@ -1,10 +1,16 @@
 from morb.base import StatsCollector
 
+import numpy as np
+
 import theano
 
 class CDkStatsCollector(StatsCollector):
     def __init__(self, rbm, input_units, latent_units, context_units=[], k=1, mean_field_for_visibles=True, mean_field_for_stats=True):
-        super(CDkStatsCollector, self).__init__(rbm, input_units, latent_units, context_units)
+        super(CDkStatsCollector, self).__init__()
+        self.rbm = rbm
+        self.input_units = input_units # the units that are supplied to the statscollector as input (i.e. the visibles)
+        self.latent_units = latent_units
+        self.context_units = context_units
         self.k = k               
         self.mean_field_for_visibles = mean_field_for_visibles
         # with 'mean_field_for_visibles', we can control whether hiddens are sampled based on visibles samples or visible means in the CD iterations.
@@ -156,3 +162,5 @@ class CDkStatsCollector(StatsCollector):
 class PCDStatsCollector(StatsCollector):
     def calculate_stats(self):
         pass # access self.rbm #TODO later
+        
+

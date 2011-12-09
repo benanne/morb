@@ -1,5 +1,3 @@
-TODO: MomentumParamUpdater
-
 TODO: 3-way parameters en 3-way factored parameters - veranderen er nog andere dingen?
 
 TODO: gaussian units (sigma=1)
@@ -16,6 +14,7 @@ TODO: wat glue code om RBMs te stacken in DBNs.
 TODO: passen autoencoders ook binnen dit raamwerk? mss moeten bepaalde dingen dan hernoemd worden...
 
 TODO: docs: what are the different components and their roles, what are vmaps, umaps, dmaps, ..., and what are the interfaces the different components adhere to (f.e. the 'cd' keyword argument for samplers)
++ some common use cases + example usage for each feature (f.e. how to use momentum, how to construct a CD updater)
 
 TODO: cleanup: remove some comments that are irrelevant
 

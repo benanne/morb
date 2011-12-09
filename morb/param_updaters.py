@@ -2,6 +2,10 @@ from morb.base import ParamUpdater
 from morb.base import SumParamUpdater
 from morb.base import ScaleParamUpdater
 
+import theano
+import theano.tensor as T
+import numpy as np
+
 ### PARAM UPDATERS ###
 
 class DecayParamUpdater(ParamUpdater):
@@ -12,9 +16,30 @@ class DecayParamUpdater(ParamUpdater):
         
 
 class MomentumParamUpdater(ParamUpdater):
+    def __init__(self, pu, momentum, variable_shapes):
+        # IMPORTANT: since this ParamUpdater has state, it requires the shape of the parameter
+        # variables to be supplied at initialisation.
+        super(MomentumParamUpdater, self).__init__(pu.parameters, pu.stats_collectors)
+        self.pu = pu
+        self.momentum = momentum
+        self.variable_shapes = variable_shapes
+        self.previous_update_vars = []
+        
+        for v, shape in zip(pu.parameters.variables, self.variable_shapes):
+            name = v.name + "_momentum"
+            self.previous_update_vars.append(theano.shared(value = np.zeros(shape, dtype=theano.config.floatX), name=name))
+                    
     def calculate_update(self):
-        pass # TODO LATER: momentum: this updater has to have memory, so it's a challenge.
-    
+        updates = [d + self.momentum * p for d, p in zip(self.pu.calculate_update(), self.previous_update_vars)]
+        # store new updates in the stats collector, so they can be used as 'previous updates' in the next step
+        self.theano_updates = dict(zip(self.previous_update_vars, updates))
+        return updates
+        
+    def get_theano_updates(self):
+        u = self.theano_updates.copy() # the MomentumParamUpdater's own state updates
+        u.update(self.pu.get_theano_updates()) # the state updates of the contained ParamUpdater
+        return u
+
 
 class CDParamUpdater(ParamUpdater):
     def __init__(self, parameters, stats_collector):

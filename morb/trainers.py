@@ -7,13 +7,12 @@ import numpy as np
 
 class MinibatchTrainer(Trainer):
     # use self.rbm, self.umap, self.get_updates(vmap)
-    def compile_function(self, initial_vmap, monitors=[], name='func', mb_size=32, update=True, mode=None):
-        # setting update=False is useful when compiling a function for evaluation only, i.e. no training.
+    def compile_function(self, initial_vmap, monitors=[], name='func', mb_size=32, train=True, mode=None):
+        # setting train=False is useful when compiling a function for evaluation only, i.e. no training.
         # this is interesting when one wants to evaluate training progress on a validation set, for example.
-        if update:
-            updates = self.get_theano_updates(initial_vmap)        
-        else:
-            updates = {}
+        # then the variables will not be updated, but there might still be updates from scan operations
+        # for example, so we still have to fetch them!
+        updates = self.get_theano_updates(initial_vmap, train) 
         
         # initialise data sets         
         data_sets = {}

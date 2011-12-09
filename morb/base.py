@@ -109,6 +109,9 @@ class ParamUpdater(object):
         # parameters is A SINGLE Parameters object. not a list.
         self.parameters = parameters
         self.stats_collectors = stats_collectors
+        self.theano_updates = {} # some ParamUpdaters have state. Most don't, so then this is just
+        # an empty dictionary. Those who do have state (like the MomentumParamUpdater) override
+        # this variable.
         
     def get_update(self):
         for s in self.stats_collectors:
@@ -118,6 +121,12 @@ class ParamUpdater(object):
         
     def calculate_update(self):
         raise NotImplementedError("ParamUpdater base class")
+        
+    def get_theano_updates(self):
+        """
+        gets own updates and the updates of all contained paramupdaters (if applicable).
+        """
+        return self.theano_updates
         
     def __add__(self, p2):
         return SumParamUpdater([self, p2])
@@ -152,6 +161,11 @@ class ScaleParamUpdater(ParamUpdater):
         
     def calculate_update(self):
         return [self.scaling_factor * d for d in self.pu.calculate_update()]
+        
+    def get_theano_updates(self):
+        u = {} # a scale param_updater has no state, so it has no theano updates of its own.
+        u.update(self.pu.get_theano_updates())
+        return u
 
 # this extension has to be here because it's used in the base class
 class SumParamUpdater(ParamUpdater):
@@ -175,20 +189,19 @@ class SumParamUpdater(ParamUpdater):
             s = [sd + d for sd, d in zip(s, pu.calculate_update())]
         return s
         
+    def get_theano_updates(self):
+        u = {} # a sum param_updater has no state, so it has no theano updates of its own.
+        for pu in self.param_updaters:
+            u.update(pu.get_theano_updates())
+        return u
+        
 
    
 class StatsCollector(object):
-    def __init__(self, rbm, input_units, latent_units, context_units=[]):
+    def __init__(self):
         self.reset()
-        self.rbm = rbm
-        self.input_units = input_units # the units that are supplied to the statscollector as input (i.e. the visibles)
-        self.latent_units = latent_units
-        self.context_units = context_units
         self.stats = {}
-        # IMPORTANT: the stats collector object does not ascertain that there are no dependences between the input
-        # units themselves or between the latent units themselves. Check this yourself if necessary! Typically
-        # there should not be any.
-        
+        self.theano_updates = {}
         
     def reset(self):
         self.collected = False
@@ -200,6 +213,9 @@ class StatsCollector(object):
         
     def calculate_stats(self):
         raise NotImplementedError("StatsCollector base class")
+        
+    def get_theano_updates(self):
+        return self.theano_updates
     
 
 class Trainer(object):
@@ -207,18 +223,21 @@ class Trainer(object):
         self.rbm = rbm
         self.umap = umap
 
-    def get_theano_updates(self, vmap):
+    def get_theano_updates(self, vmap, train=True):
         theano_updates = {}
         # collect stats
-        stats_collectors = [s for pu in self.umap.values() for s in pu.stats_collectors]
+        stats_collectors = set([s for pu in self.umap.values() for s in pu.stats_collectors])
         for s in stats_collectors:
             s.collect(vmap)
-            theano_updates.update(s.theano_updates)
+            theano_updates.update(s.get_theano_updates())
         
-        # calculate updates
-        for p, pu in self.umap.items():
-            updated_variables = [v + u for v, u in zip(p.variables, pu.get_update())]
-            theano_updates.update(dict(zip(p.variables, updated_variables)))
+        if train:
+            # calculate updates
+            for p, pu in self.umap.items():
+                updated_variables = [v + u for v, u in zip(p.variables, pu.get_update())]
+                theano_updates.update(dict(zip(p.variables, updated_variables))) # variable updates
+                theano_updates.update(pu.get_theano_updates()) # ParamUpdater state updates
+                # (MomentumParamUpdater has state, for example)
 
         return theano_updates
 
