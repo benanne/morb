@@ -1,10 +1,3 @@
-TODO: replace stats collectors with a 'Stats' object that contains both symbolic stats and the corresponding theano_updates (if any). That way the Trainer can extract the theano updates, and the stats can already be accessed before Trainer.compile_function is called. The Stats objects can be returned by regular python methods.
-  modify the following to use Stats objects instead of StatsCollectors:
-  - tests
-  
-TODO: get rid of 'monitors' as classes and replace them by Python functions.
-  - will need to adapt all the tests as well as Trainer.compile_function.
-  
 TODO: redo the architecture drawing because Monitors no longer exist and StatsCollectors have been replaced by Stats objects.
 
 TODO: run the convolutional test on a GPU-enabled machine and verify the speedups between CPU / GPU / GPU with shape specification

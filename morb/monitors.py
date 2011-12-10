@@ -17,18 +17,6 @@ def reconstruction_crossentropy(stats, u):
     # see http://deeplearning.net/tutorial/rbm.html, below the gibbs_hvh and gibbs_vhv code for an explanation.
 
 
-# TODO: remove these three, they are trivial.    
-def reconstruction(stats, u):
-    return stats['model'][u]
-    
-def data(sc, u):
-    return stats['data'][u]
-
-def energy(stats, rbm, phase='data'):
-    """
-    The phase argument is either 'data' or 'model'.
-    """
-    return rbm.energy(stats[phase]) 
 
 # TODO: pseudo likelihood? is that feasible?
 
