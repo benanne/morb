@@ -1,4 +1,4 @@
-TODO: test shape specification for Convolutional2DParameters, use debugprint to see if the correct shapes were specified.
+TODO: run the convolutional test on a GPU-enabled machine and verify the speedups between CPU / GPU / GPU with shape specification
 
 TODO: PCDStatsCollector (persistent CD)
 

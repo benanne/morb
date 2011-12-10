@@ -46,9 +46,9 @@ test_set_x = test_set_x.reshape((test_set_x.shape[0], 1, 28, 28))
 
 
 visible_maps = 1
-hidden_maps = 100 # 50
-filter_height = 28 # 8
-filter_width = 28 # 8
+hidden_maps = 50 # 100 # 50
+filter_height = 8 # 28 # 8
+filter_width = 8 # 28 # 8
 mb_size = 10
 
 
@@ -74,11 +74,22 @@ initial_bv = np.zeros(visible_maps, dtype = theano.config.floatX)
 initial_bh = np.zeros(hidden_maps, dtype = theano.config.floatX)
 
 
+shape_info = {
+  'hidden_maps': hidden_maps,
+  'visible_maps': visible_maps,
+  'filter_height': filter_height,
+  'filter_width': filter_width,
+  'visible_height': 28,
+  'visible_width': 28,
+  'mb_size': mb_size
+}
+
+
 # rbms.SigmoidBinaryRBM(n_visible, n_hidden)
 rbm = morb.base.RBM()
 rbm.v = units.SigmoidUnits(rbm, name='v') # visibles
 rbm.h = units.BinaryUnits(rbm, name='h') # hiddens
-rbm.W = parameters.Convolutional2DParameters(rbm, [rbm.v, rbm.h], theano.shared(value=initial_W, name='W'), name='W')
+rbm.W = parameters.Convolutional2DParameters(rbm, [rbm.v, rbm.h], theano.shared(value=initial_W, name='W'), name='W', shape_info=shape_info)
 # one bias per map (so shared across width and height):
 rbm.bv = parameters.SharedBiasParameters(rbm, rbm.v, 3, 2, theano.shared(value=initial_bv, name='bv'), name='bv')
 rbm.bh = parameters.SharedBiasParameters(rbm, rbm.h, 3, 2, theano.shared(value=initial_bh, name='bh'), name='bh')
@@ -106,8 +117,8 @@ e_model = monitors.ReconstructionEnergyMonitor(sc, rbm)
 initial_vmap = { rbm.v: T.tensor4('v') }
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
-train = t.compile_function(initial_vmap, mb_size=10, monitors=[m, e_data, e_model], name='train', mode=mode)
-evaluate = t.compile_function(initial_vmap, mb_size=10, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', train=False, mode=mode)
+train = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, e_data, e_model], name='train', mode=mode)
+evaluate = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', train=False, mode=mode)
 
 
 

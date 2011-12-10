@@ -155,8 +155,9 @@ class Convolutional2DParameters(Parameters):
         def term_vu(vmap):
             # input = hiddens, output = visibles so we need to swap dimensions
             W_shuffled = self.W.dimshuffle(1, 0, 2, 3)
+            shuffled_filter_shape = [self.filter_shape[k] for k in (1, 0, 2, 3)]
             return conv.conv2d(vmap[self.hu], W_shuffled, border_mode='full', \
-                               image_shape=self.hidden_shape, filter_shape=self.filter_shape)
+                               image_shape=self.hidden_shape, filter_shape=shuffled_filter_shape)
             
         def term_hu(vmap):
             # input = visibles, output = hiddens, flip filters
@@ -171,7 +172,7 @@ class Convolutional2DParameters(Parameters):
     def filter_shape(self):
         keys = ['hidden_maps', 'visible_maps', 'filter_height', 'filter_width']
         if self.shape_info is not None and all(k in self.shape_info for k in keys):
-            return (self.shape_info[k] for k in keys)
+            return tuple(self.shape_info[k] for k in keys)
         else:
             return None
 
@@ -179,7 +180,7 @@ class Convolutional2DParameters(Parameters):
     def visible_shape(self):
         keys = ['mb_size', 'visible_maps', 'visible_height', 'visible_width']                
         if self.shape_info is not None and all(k in self.shape_info for k in keys):
-            return (self.shape_info[k] for k in keys)
+            return tuple(self.shape_info[k] for k in keys)
         else:
             return None
 
