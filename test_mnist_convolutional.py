@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats_collectors, param_updaters, trainers, monitors, units, parameters
+from morb import rbms, stats, param_updaters, trainers, monitors, units, parameters
 
 import theano
 import theano.tensor as T
@@ -46,9 +46,9 @@ test_set_x = test_set_x.reshape((test_set_x.shape[0], 1, 28, 28))
 
 
 visible_maps = 1
-hidden_maps = 50 # 100 # 50
-filter_height = 8 # 28 # 8
-filter_width = 8 # 28 # 8
+hidden_maps = 100 # 50
+filter_height = 28 # 8
+filter_width = 28 # 8
 mb_size = 10
 
 
@@ -94,27 +94,26 @@ rbm.W = parameters.Convolutional2DParameters(rbm, [rbm.v, rbm.h], theano.shared(
 rbm.bv = parameters.SharedBiasParameters(rbm, rbm.v, 3, 2, theano.shared(value=initial_bv, name='bv'), name='bv')
 rbm.bh = parameters.SharedBiasParameters(rbm, rbm.h, 3, 2, theano.shared(value=initial_bh, name='bh'), name='bh')
 
-
+initial_vmap = { rbm.v: T.tensor4('v') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-sc = stats_collectors.CDkStatsCollector(rbm, input_units=[rbm.v], latent_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], k=1)
 
 umap = {}
 for params in rbm.params_list:
-    # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
-    pu =  0.001 * param_updaters.CDParamUpdater(params, sc)
+    # pu =  0.001 * (param_updaters.CDParamUpdater(params, s) + 0.02 * param_updaters.DecayParamUpdater(params))
+    pu =  0.001 * param_updaters.CDParamUpdater(params, s)
     umap[params] = pu
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)
-m = monitors.ReconstructionMSEMonitor(sc, rbm.v)
-m_data = monitors.DataMonitor(sc, rbm.v)
-m_model = monitors.ReconstructionMonitor(sc, rbm.v)
-e_data = monitors.DataEnergyMonitor(sc, rbm)
-e_model = monitors.ReconstructionEnergyMonitor(sc, rbm)
+m = monitors.reconstruction_mse(s, rbm.v)
+m_data = s['data'][rbm.v]
+m_model = s['model'][rbm.v]
+e_data = rbm.energy(s['data'])
+e_model = rbm.energy(s['model'])
 
-initial_vmap = { rbm.v: T.tensor4('v') }
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, e_data, e_model], name='train', mode=mode)

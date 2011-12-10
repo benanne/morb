@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats_collectors, param_updaters, trainers, monitors
+from morb import rbms, stats, param_updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -28,21 +28,22 @@ data = generate_data(200)
 n_visible = data.shape[1]
 n_hidden = 100
 rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
+initial_vmap = { rbm.v: T.matrix('v') }
 
 # We use single-step contrastive divergence (CD-1) to train the RBM. For this, we can use
-# the CDParamUpdater. This requires a stats collector that computes the CD-1 statistics:
-sc = stats_collectors.CDkStatsCollector(rbm, input_units=[rbm.v], latent_units=[rbm.h], k=1)
+# the CDParamUpdater. This requires symbolic CD-1 statistics:
+s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], k=1)
 
 # We create a ParamUpdater for each Parameters instance.
 umap = {}
 for params in rbm.params_list:
-    pu =  0.001 * param_updaters.CDParamUpdater(params, sc) # the learning rate is 0.001
+    pu =  0.001 * param_updaters.CDParamUpdater(params, s) # the learning rate is 0.001
     umap[params] = pu
  
 # training
 t = trainers.MinibatchTrainer(rbm, umap)
-m = monitors.ReconstructionMSEMonitor(sc, rbm.v)
-train = t.compile_function({ rbm.v: T.matrix('v') }, mb_size=32, monitors=[m], name='train', mode=mode)
+mse = monitors.reconstruction_mse(s, rbm.v)
+train = t.compile_function(initial_vmap, mb_size=32, monitors=[mse], name='train', mode=mode)
 
 epochs = 50
 

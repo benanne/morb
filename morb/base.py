@@ -1,6 +1,13 @@
 import theano
 import theano.tensor as T
 
+def _unique(l): # no idea why this function isn't available - the set() trick only works for hashable types!
+    u = []
+    for e in l:
+        if e not in u:
+            u.append(e)
+    return u
+
 ### Base classes: sampling and modeling ###
 
 class ActivationFunction(object):
@@ -105,21 +112,15 @@ class Parameters(object):
 
 class ParamUpdater(object):
     # A ParamUpdater object updates a single Parameters object. Multiple ParamUpdaters can compute updates for a single Parameters object, which can then be aggregated by composite ParamUpdaters (like the SumParamUpdater)
-    def __init__(self, parameters, stats_collectors=[]):
+    def __init__(self, parameters, stats_list=[]):
         # parameters is A SINGLE Parameters object. not a list.
         self.parameters = parameters
-        self.stats_collectors = stats_collectors
+        self.stats_list = stats_list
         self.theano_updates = {} # some ParamUpdaters have state. Most don't, so then this is just
         # an empty dictionary. Those who do have state (like the MomentumParamUpdater) override
         # this variable.
-        
+                
     def get_update(self):
-        for s in self.stats_collectors:
-            if not s.collected:
-                raise RuntimeError("StatsCollector has not run!")
-        return self.calculate_update()
-        
-    def calculate_update(self):
         raise NotImplementedError("ParamUpdater base class")
         
     def get_theano_updates(self):
@@ -155,12 +156,12 @@ class ParamUpdater(object):
 # this extension has to be here because it's used in the base class        
 class ScaleParamUpdater(ParamUpdater):
     def __init__(self, pu, scaling_factor):
-        super(ScaleParamUpdater, self).__init__(pu.parameters, pu.stats_collectors)
+        super(ScaleParamUpdater, self).__init__(pu.parameters, pu.stats_list)
         self.pu = pu
         self.scaling_factor = scaling_factor
         
-    def calculate_update(self):
-        return [self.scaling_factor * d for d in self.pu.calculate_update()]
+    def get_update(self):
+        return [self.scaling_factor * d for d in self.pu.get_update()]
         
     def get_theano_updates(self):
         u = {} # a scale param_updater has no state, so it has no theano updates of its own.
@@ -172,21 +173,21 @@ class SumParamUpdater(ParamUpdater):
     def __init__(self, param_updaters):
         # assert that all param_updaters affect the same Parameters object, gather stats collectors
         self.param_updaters = param_updaters
-        scs = []
+        stats_list = []
         for pu in param_updaters:
             if pu.parameters != param_updaters[0].parameters:
                 raise RuntimeError("Cannot add ParamUpdaters that affect a different Parameters object together")        
-            scs.extend(pu.stats_collectors)
-        scs = set(scs) # we only need each collector once.
+            stats_list.extend(pu.stats_list)
+        stats_list = _unique(stats_list) # we only need each Stats object once.
         
-        super(SumParamUpdater, self).__init__(param_updaters[0].parameters, scs)
+        super(SumParamUpdater, self).__init__(param_updaters[0].parameters, stats_list)
         
-    def calculate_update(self):
+    def get_update(self):
         updaters = self.param_updaters[:] # make a copy
         first_updater = updaters.pop(0)
-        s = first_updater.calculate_update()
+        s = first_updater.get_update()
         for pu in updaters: # iterate over the REMAINING updaters
-            s = [sd + d for sd, d in zip(s, pu.calculate_update())]
+            s = [sd + d for sd, d in zip(s, pu.get_update())]
         return s
         
     def get_theano_updates(self):
@@ -196,27 +197,12 @@ class SumParamUpdater(ParamUpdater):
         return u
         
 
-   
-class StatsCollector(object):
-    def __init__(self):
-        self.reset()
-        self.stats = {}
-        self.theano_updates = {}
-        
-    def reset(self):
-        self.collected = False
-        self.stats = {}
-        
-    def collect(self, vmap):
-        self.calculate_stats(vmap)
-        self.collected = True
-        
-    def calculate_stats(self):
-        raise NotImplementedError("StatsCollector base class")
-        
+class Stats(dict): # a stats object is just a dictionary of vmaps, but it also holds associated theano updates.
+    def __init__(self, updates):
+        self.theano_updates = updates
+    
     def get_theano_updates(self):
         return self.theano_updates
-    
 
 class Trainer(object):
     def __init__(self, rbm, umap):
@@ -226,9 +212,8 @@ class Trainer(object):
     def get_theano_updates(self, vmap, train=True):
         theano_updates = {}
         # collect stats
-        stats_collectors = set([s for pu in self.umap.values() for s in pu.stats_collectors])
-        for s in stats_collectors:
-            s.collect(vmap)
+        stats_list = _unique([s for pu in self.umap.values() for s in pu.stats_list]) # cannot use set() here because dicts are not hashable.
+        for s in stats_list:
             theano_updates.update(s.get_theano_updates())
         
         if train:
@@ -305,7 +290,3 @@ class RBM(object):
         return "<morb:%s with units %s and parameters %s>" % (self.__class__.__name__, units_names, params_names)
         
 
-# this is a placeholder base class, doesn't do anything by itself. yet.
-class Monitor(object):
-    def expression(self):
-        raise NotImplementedError("Monitor base class")

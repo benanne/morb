@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats_collectors, param_updaters, trainers, monitors
+from morb import rbms, stats, param_updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -36,27 +36,22 @@ n_hidden = 100
 
 print ">> Constructing RBM..."
 rbm = rbms.BinaryBinaryCRBM(n_visible, n_hidden, n_context)
-# sc10 = stats_collectors.CDkStatsCollector(rbm, [rbm.v], k=10) # CD-10 stats collector
-
-# calculate CD-10 stats symbolically:
-# s = sc10.calculate_stats({ rbm.v: T.vector('v') })
+initial_vmap = { rbm.v: T.matrix('v'), rbm.x: T.matrix('x') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-sc = stats_collectors.CDkStatsCollector(rbm, input_units=[rbm.v], latent_units=[rbm.h], context_units=[rbm.x], k=1)
+s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], context_units=[rbm.x], k=1)
 
 umap = {}
 for params in rbm.params_list:
     # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
-    pu =  0.0005 * param_updaters.CDParamUpdater(params, sc)
+    pu =  0.0005 * param_updaters.CDParamUpdater(params, s)
     umap[params] = pu
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)
-m = monitors.ReconstructionMSEMonitor(sc, rbm.v)
-mce = monitors.ReconstructionCrossEntropyMonitor(sc, rbm.v)
-
-initial_vmap = { rbm.v: T.matrix('v'), rbm.x: T.matrix('x') }
+m = monitors.reconstruction_mse(s, rbm.v)
+mce = monitors.reconstruction_crossentropy(s, rbm.v)
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce], name='train', mode=mode)

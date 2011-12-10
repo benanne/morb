@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats_collectors, param_updaters, trainers, monitors
+from morb import rbms, stats, param_updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -44,10 +44,11 @@ n_hidden = 100
 
 print ">> Constructing RBM..."
 rbm = rbms.SigmoidBinaryRBM(n_visible, n_hidden)
+initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-sc = stats_collectors.CDkStatsCollector(rbm, input_units=[rbm.v], latent_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], k=1)
 
 sparsity_targets = { rbm.h: 0.1 }
 
@@ -57,25 +58,19 @@ sparsity_cost = 0.5
 
 umap = {}
 
-umap[rbm.W] = eta * param_updaters.CDParamUpdater(rbm.W, sc) \
-            + eta * sparsity_cost * param_updaters.SparsityParamUpdater(rbm.W, sparsity_targets, sc)
-umap[rbm.bh] = eta * param_updaters.CDParamUpdater(rbm.bh, sc) \
-             + eta * sparsity_cost * param_updaters.SparsityParamUpdater(rbm.bh, sparsity_targets, sc)
-umap[rbm.bv] = eta * param_updaters.CDParamUpdater(rbm.bv, sc)
+umap[rbm.W] = eta * param_updaters.CDParamUpdater(rbm.W, s) \
+            + eta * sparsity_cost * param_updaters.SparsityParamUpdater(rbm.W, sparsity_targets, s)
+umap[rbm.bh] = eta * param_updaters.CDParamUpdater(rbm.bh, s) \
+             + eta * sparsity_cost * param_updaters.SparsityParamUpdater(rbm.bh, sparsity_targets, s)
+umap[rbm.bv] = eta * param_updaters.CDParamUpdater(rbm.bv, s)
 
-"""
-for params in rbm.params_list:
-    # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
-    pu =  0.001 * param_updaters.CDParamUpdater(params, sc)
-    umap[params] = pu
-"""
+
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)
-m = monitors.ReconstructionMSEMonitor(sc, rbm.v)
-m_model = monitors.ReconstructionMonitor(sc, rbm.h)
+m = monitors.reconstruction_mse(s, rbm.v)
+m_model = s['model'][rbm.h]
 
-initial_vmap = { rbm.v: T.matrix('v') }
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=100, monitors=[m, m_model], name='train', mode=mode)

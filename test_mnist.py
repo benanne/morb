@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats_collectors, param_updaters, trainers, monitors
+from morb import rbms, stats, param_updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -44,26 +44,25 @@ n_hidden = 100
 
 print ">> Constructing RBM..."
 rbm = rbms.SigmoidBinaryRBM(n_visible, n_hidden)
+initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-sc = stats_collectors.CDkStatsCollector(rbm, input_units=[rbm.v], latent_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], k=1)
 
 umap = {}
 for params in rbm.params_list:
     # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
-    pu =  0.001 * param_updaters.CDParamUpdater(params, sc)
+    pu =  0.001 * param_updaters.CDParamUpdater(params, s)
     umap[params] = pu
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)
-m = monitors.ReconstructionMSEMonitor(sc, rbm.v)
-m_data = monitors.DataMonitor(sc, rbm.v)
-m_model = monitors.ReconstructionMonitor(sc, rbm.v)
-e_data = monitors.DataEnergyMonitor(sc, rbm)
-e_model = monitors.ReconstructionEnergyMonitor(sc, rbm)
-
-initial_vmap = { rbm.v: T.matrix('v') }
+m = monitors.reconstruction_mse(s, rbm.v)
+m_data = s['data'][rbm.v]
+m_model = s['model'][rbm.v]
+e_data = rbm.energy(s['data'])
+e_model = rbm.energy(s['model'])
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=100, monitors=[m, e_data, e_model], name='train', mode=mode)

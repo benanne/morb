@@ -1,16 +1,17 @@
-TODO: run the convolutional test on a GPU-enabled machine and verify the speedups between CPU / GPU / GPU with shape specification
-
+TODO: replace stats collectors with a 'Stats' object that contains both symbolic stats and the corresponding theano_updates (if any). That way the Trainer can extract the theano updates, and the stats can already be accessed before Trainer.compile_function is called. The Stats objects can be returned by regular python methods.
+  modify the following to use Stats objects instead of StatsCollectors:
+  - tests
+  
 TODO: get rid of 'monitors' as classes and replace them by Python functions.
   - will need to adapt all the tests as well as Trainer.compile_function.
+  
+TODO: redo the architecture drawing because Monitors no longer exist and StatsCollectors have been replaced by Stats objects.
 
-TODO: PCDStatsCollector (persistent CD)
+TODO: run the convolutional test on a GPU-enabled machine and verify the speedups between CPU / GPU / GPU with shape specification
+
+TODO: pcd_stats (persistent CD)
 
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood.
-
-TODO: rename CDkStatsCollector to CDStatsCollector
-
-TODO: passing an initial_vmap to Trainer.compile_function should probably be optional. The only useful information it conveys is the dimensionality of the input...
-What are some use cases for this functionality anyway? I can't think of any off the top of my head, except that it maybe useful when RBMs are stacked into DBNs. Will probably have to verify this when I try that.
 
 TODO: gaussian units (sigma=1)
 
@@ -45,7 +46,7 @@ TODO: ReLU units
 
 TODO: in a conditional RBM (f.e. with visibles v, hiddens h and context x), CD won't work if the context variable isn't supplied. This is because CD will try to update the parameters tying h/v and x regardless of whether x was supplied as context. It would be nice if this didn't happen, i.e. when x is not supplied as context, all parameters tying x are simply ignored. This would also avoid some hard-to-decipher error messages.
 
-TODO: Fast persistent CD (FPCD)? (Tieleman) - this will require another stats collector that also keeps internal state (the fast weights)
+TODO: Fast persistent CD (FPCD)? (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
 
 TODO: supervised finetuning - how does this fit in the framework (separate trainers and updaters?)
 
@@ -53,12 +54,17 @@ TODO: Look into hessian-free optimisation, maybe that fits in as well? (although
 
 TODO: ParamUpdaters compute additive updates for the parameters. But what if a more exotic training algorithm is used that does not use additive updates (multiplicative updates are a possibility)? Maybe it's better to let the ParamUpdater perform the addition as well?
 
+TODO: add docstrings everywhere
+
 TODO: Fast Persistent CD (Tijmen)
  
 TODO: Maybe as an exercise, also implement something more exotic:
 - Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
 - find out what else there is
 
+TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
+
+TODO: free energy? (where it can be computed)
 
 
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
@@ -92,8 +98,8 @@ DecayParamUpdater: provides a decay term
 MomentumParamUpdater: encapsulates another ParamUpdater and applies momentum to it
 
 CDParamUpdater: encapsulates CD-k or PCD weight update computation
-  * takes the input data, computes statistics by calling a StatsCollector on it
-  * gets the form of the update term from the Parameters object, fills in the blanks with the stats from the StatsCollector
+  * takes the input data, computes statistics (Stats object)
+  * gets the form of the update term from the Parameters object, fills in the blanks with the stats
   * returns the resulting update
   
 SparsityParamUpdater: encapsulates sparsity target regularisation
@@ -103,23 +109,13 @@ SumParamUpdater: sums the updates obtained from its child paramupdaters. should 
 ScaleParamUpdater: takes a ParamUpdater and a scale factor, and scales the updates by this factor. This will be the result of writing '0.005 * ParamUpdater()' for example.
 
 
-StatsCollector: object that collects statistics (typically for CD), given input
+Stats: object that encapsulates statistics (typically for CD)
 
-CDStatsCollector(k) < StatsCollector: collects statistics for CD-k
+cd_stats: statistics for CD-k
 
-PCDStatsCollector < StatsCollector: collects statistics for PCD
+pcd_stats: statistics for PCD
 
-!! since only the negative term differs between CDStatsCollector and PCDStatsCollector, maybe some overlapping code can be factored out here.
-
-
-update process:
-
-- first, all ParamUpdaters (which each update ONLY ONE Parameters object) are inspected, and the StatsCollector objects they use are extracted: ParamUpdater.stats_collectors
-- then iterate:
-  * collect stats: run the extracted StatsCollectors (StatsCollector.collect() or something)
-  * run ParamUpdaters
-    - each ParamUpdater calls StatsCollector.stats
-  * That way, each collector is only run once per update step, and all params are updated based on the same stats. We just need to make sure that they all hold a reference to the same StatsCollector object.
+!! since only the negative term differs between cd_stats and pcd_stats, maybe some overlapping code can be factored out here.
 
 
 MODULAR RBM

@@ -14,7 +14,7 @@ class MinibatchTrainer(Trainer):
         # for example, so we still have to fetch them!
         updates = self.get_theano_updates(initial_vmap, train) 
         
-        # initialise data sets         
+        # initialise data sets
         data_sets = {}
         for u, v in initial_vmap.items():
             shape = (1,) * v.ndim
@@ -25,9 +25,8 @@ class MinibatchTrainer(Trainer):
         
         # construct givens for the compiled theano function - mapping variables to data
         givens = dict((initial_vmap[u], data_sets[u][index*mb_size:(index+1)*mb_size]) for u in initial_vmap)
-        monitor_expressions = [m.expression() for m in monitors]
             
-        TF = theano.function([index], monitor_expressions,
+        TF = theano.function([index], monitors,
             updates = updates, givens = givens, name = name, mode = mode)    
                 
         def func(dmap):
