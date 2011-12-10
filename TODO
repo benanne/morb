@@ -1,6 +1,16 @@
 TODO: run the convolutional test on a GPU-enabled machine and verify the speedups between CPU / GPU / GPU with shape specification
 
+TODO: get rid of 'monitors' as classes and replace them by Python functions.
+  - will need to adapt all the tests as well as Trainer.compile_function.
+
 TODO: PCDStatsCollector (persistent CD)
+
+TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood.
+
+TODO: rename CDkStatsCollector to CDStatsCollector
+
+TODO: passing an initial_vmap to Trainer.compile_function should probably be optional. The only useful information it conveys is the dimensionality of the input...
+What are some use cases for this functionality anyway? I can't think of any off the top of my head, except that it maybe useful when RBMs are stacked into DBNs. Will probably have to verify this when I try that.
 
 TODO: gaussian units (sigma=1)
 
@@ -41,8 +51,20 @@ TODO: supervised finetuning - how does this fit in the framework (separate train
 
 TODO: Look into hessian-free optimisation, maybe that fits in as well? (although I think this is pretty much always supervised?)
 
+TODO: ParamUpdaters compute additive updates for the parameters. But what if a more exotic training algorithm is used that does not use additive updates (multiplicative updates are a possibility)? Maybe it's better to let the ParamUpdater perform the addition as well?
 
-- idee voor later: hierbij ook een 'chunking' framework voegen dat data in grote chunks kan omzetten voor efficient trainen op de GPU, + snapshotting
+TODO: Fast Persistent CD (Tijmen)
+ 
+TODO: Maybe as an exercise, also implement something more exotic:
+- Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
+- find out what else there is
+
+
+
+- This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
+https://github.com/deeplearningais/CUV/tree/master/examples/rbm
+
+
 
 
 
