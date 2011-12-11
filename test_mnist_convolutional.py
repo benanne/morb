@@ -6,7 +6,7 @@ import theano.tensor as T
 
 import numpy as np
 
-import gzip, cPickle
+import gzip, cPickle, time
 
 import matplotlib.pyplot as plt
 plt.ion()
@@ -46,9 +46,9 @@ test_set_x = test_set_x.reshape((test_set_x.shape[0], 1, 28, 28))
 
 
 visible_maps = 1
-hidden_maps = 100 # 50
-filter_height = 28 # 8
-filter_width = 28 # 8
+hidden_maps = 50 # 100 # 50
+filter_height = 8 # 28 # 8
+filter_width = 8 # 28 # 8
 mb_size = 10
 
 
@@ -74,6 +74,7 @@ initial_bv = np.zeros(visible_maps, dtype = theano.config.floatX)
 initial_bh = np.zeros(hidden_maps, dtype = theano.config.floatX)
 
 
+
 shape_info = {
   'hidden_maps': hidden_maps,
   'visible_maps': visible_maps,
@@ -83,6 +84,8 @@ shape_info = {
   'visible_width': 28,
   'mb_size': mb_size
 }
+
+# shape_info = None
 
 
 # rbms.SigmoidBinaryRBM(n_visible, n_hidden)
@@ -166,6 +169,8 @@ emodel_train_so_far = []
 edata_so_far = []
 emodel_so_far = []
 
+start_time = time.time()
+
 for epoch in range(epochs):
     monitoring_data_train = [(cost, energy_data, energy_model) for cost, energy_data, energy_model in train({ rbm.v: train_set_x })]
     mses_train, edata_train_list, emodel_train_list = zip(*monitoring_data_train)
@@ -219,6 +224,7 @@ for epoch in range(epochs):
     print "Epoch %d" % epoch
     print "training set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_train, edata_train, emodel_train)
     print "validation set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_valid, edata_valid, emodel_valid)
+    print "Time: %.2f s" % (time.time() - start_time)
 
 
 

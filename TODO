@@ -1,6 +1,6 @@
 TODO: redo the architecture drawing because Monitors no longer exist and StatsCollectors have been replaced by Stats objects.
 
-TODO: run the convolutional test on a GPU-enabled machine and verify the speedups between CPU / GPU / GPU with shape specification
+TODO: verify correctness of the convolutional parameters implementation, cause it does some pretty weird things to MNIST.
 
 TODO: pcd_stats (persistent CD)
 

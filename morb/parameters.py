@@ -155,7 +155,10 @@ class Convolutional2DParameters(Parameters):
         def term_vu(vmap):
             # input = hiddens, output = visibles so we need to swap dimensions
             W_shuffled = self.W.dimshuffle(1, 0, 2, 3)
-            shuffled_filter_shape = [self.filter_shape[k] for k in (1, 0, 2, 3)]
+            if self.filter_shape is not None:
+                shuffled_filter_shape = [self.filter_shape[k] for k in (1, 0, 2, 3)]
+            else:
+                shuffled_filter_shape = None
             return conv.conv2d(vmap[self.hu], W_shuffled, border_mode='full', \
                                image_shape=self.hidden_shape, filter_shape=shuffled_filter_shape)
             
