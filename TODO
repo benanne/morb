@@ -1,10 +1,10 @@
-TODO: redo the architecture drawing because Monitors no longer exist and StatsCollectors have been replaced by Stats objects.
-
-TODO: verify correctness of the convolutional parameters implementation, cause it does some pretty weird things to MNIST.
+TODO: verify correctness of the convolutional parameters implementation, because it does some pretty weird things to MNIST.
 
 TODO: pcd_stats (persistent CD)
 
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood.
+
+TODO: fill in the blanks in the license
 
 TODO: gaussian units (sigma=1)
 
