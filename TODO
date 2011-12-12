@@ -1,4 +1,5 @@
 TODO: verify correctness of the convolutional parameters implementation, because it does some pretty weird things to MNIST.
+  - if something is wrong, the error is probably in the gradient. test with a single minibatch to see if that makes any diference.
 
 TODO: pcd_stats (persistent CD)
 
@@ -53,7 +54,7 @@ TODO: Fast Persistent CD (Tijmen)
  
 TODO: Maybe as an exercise, also implement something more exotic:
 - Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
-- find out what else there is
+- find out what else there is - 'pseudo-likelihood algorithms'?
 
 TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
 
@@ -68,6 +69,13 @@ https://github.com/deeplearningais/CUV/tree/master/examples/rbm
 
 
 
+
+- Interesting train of thought: consider an RBM being trained for classification. Typically, it is pretrained unsupervisedly first, and then finetuned supervisedly. It is, however, also possible to combine both gradients and do both at once. This is suggested as future work in 'Training RBMs using approximations to the likelihood gradient' (PCD paper), so find out if they have done this yet.
+When both gradients are combined, it would make sense to put the emphasis on the unsupervised gradient at the start, and more on the supervised gradient at the end. That means the weights of the respective gradients (in practice: the scale factors of the ParamUpdaters) vary during training.
+Another use case where this would happen is when a variable (f.e. linearly decaying) learning rate is used.
+To support these use cases, it has to be possible to use shared Theano variables as scale factors for ParamUpdaters. (The learning rate is precisely such a scale factor.) This makes it possible to update their values every epoch, or even every training step.
+In fact, generally, it would be cool if any 'metaparameter' could be symbolic.
+Theoretically this should already be possible, but it's a good idea to actually try some of these things and see if anything is still missing to support this.
 
 
 
