@@ -31,7 +31,7 @@ rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD-1 stats
-s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
 
 umap = {}
 

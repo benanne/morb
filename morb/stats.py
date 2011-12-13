@@ -5,7 +5,7 @@ import numpy as np
 import theano
 
 
-def cd_stats(rbm, v0_vmap, input_units, latent_units, context_units=[], k=1, mean_field_for_visibles=True, mean_field_for_stats=True):
+def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, mean_field_for_visibles=True, mean_field_for_stats=True):
     # with 'mean_field_for_visibles', we can control whether hiddens are sampled based on visibles samples or visible means in the CD iterations.
     # This requires that the Units instances have samplers that return means when cd=True.
     # disabling this option is useful when one doesn't want to apply mean field during the gibbs sampling,
@@ -18,10 +18,10 @@ def cd_stats(rbm, v0_vmap, input_units, latent_units, context_units=[], k=1, mea
     # first we need to get the context, because we will have to merge it into the other vmaps.
     context_vmap = dict((u, v0_vmap[u]) for u in context_units)
 
-    h0_linear_activation_vmap = dict((h, h.linear_activation(v0_vmap)) for h in latent_units)
-    h0_activation_vmap = dict((h, h.activation(v0_vmap)) for h in latent_units)
-    h0_sample_cd_vmap = dict((h, h.sample(v0_vmap, cd=True)) for h in latent_units) # with mean field
-    h0_sample_vmap = dict((h, h.sample(v0_vmap)) for h in latent_units) # without mean field
+    h0_linear_activation_vmap = dict((h, h.linear_activation(v0_vmap)) for h in hidden_units)
+    h0_activation_vmap = dict((h, h.activation(v0_vmap)) for h in hidden_units)
+    h0_sample_cd_vmap = dict((h, h.sample(v0_vmap, cd=True)) for h in hidden_units) # with mean field
+    h0_sample_vmap = dict((h, h.sample(v0_vmap)) for h in hidden_units) # without mean field
     
     # add context
     h0_linear_activation_vmap.update(context_vmap)
@@ -29,53 +29,53 @@ def cd_stats(rbm, v0_vmap, input_units, latent_units, context_units=[], k=1, mea
     h0_sample_cd_vmap.update(context_vmap)
     h0_sample_vmap.update(context_vmap)
     
-    exp_input = [v0_vmap[u] for u in input_units]
+    exp_input = [v0_vmap[u] for u in visible_units]
     exp_context = [v0_vmap[u] for u in context_units]
-    exp_latent = [h0_sample_vmap[u] for u in latent_units]
+    exp_latent = [h0_sample_vmap[u] for u in hidden_units]
     
     # scan requires a function that returns theano expressions, so we cannot pass vmaps in or out. annoying.
     def gibbs_hvh(*args):
-        h0_sample_vmap = dict(zip(latent_units, args)) # these must be without mf!
+        h0_sample_vmap = dict(zip(hidden_units, args)) # these must be without mf!
         
         v1_in_vmap = h0_sample_vmap.copy()
         v1_in_vmap.update(context_vmap)
         
-        v1_linear_activation_vmap = dict((v, v.linear_activation(v1_in_vmap)) for v in input_units)
-        v1_activation_vmap = dict((v, v.activation(v1_in_vmap)) for v in input_units)
-        v1_sample_cd_vmap = dict((v, v.sample(v1_in_vmap, cd=True)) for v in input_units) # with mf
-        v1_sample_vmap = dict((v, v.sample(v1_in_vmap)) for v in input_units) # without mf
+        v1_linear_activation_vmap = dict((v, v.linear_activation(v1_in_vmap)) for v in visible_units)
+        v1_activation_vmap = dict((v, v.activation(v1_in_vmap)) for v in visible_units)
+        v1_sample_cd_vmap = dict((v, v.sample(v1_in_vmap, cd=True)) for v in visible_units) # with mf
+        v1_sample_vmap = dict((v, v.sample(v1_in_vmap)) for v in visible_units) # without mf
         
         if mean_field_for_visibles:
             h1_in_vmap = v1_sample_cd_vmap.copy()
             h1_in_vmap.update(context_vmap)
             
             # use the mean field version of the visibles to sample hiddens from visibles
-            h1_linear_activation_vmap = dict((h, h.linear_activation(h1_in_vmap)) for h in latent_units)
-            h1_activation_vmap = dict((h, h.activation(h1_in_vmap)) for h in latent_units)
-            h1_sample_cd_vmap = dict((h, h.sample(h1_in_vmap, cd=True)) for h in latent_units) # with mf
-            h1_sample_vmap = dict((h, h.sample(h1_in_vmap)) for h in latent_units) # without mf
+            h1_linear_activation_vmap = dict((h, h.linear_activation(h1_in_vmap)) for h in hidden_units)
+            h1_activation_vmap = dict((h, h.activation(h1_in_vmap)) for h in hidden_units)
+            h1_sample_cd_vmap = dict((h, h.sample(h1_in_vmap, cd=True)) for h in hidden_units) # with mf
+            h1_sample_vmap = dict((h, h.sample(h1_in_vmap)) for h in hidden_units) # without mf
         else:
             h1_in_vmap = v1_sample_vmap.copy()
             h1_in_vmap.update(context_vmap)
             
             # use the sampled visibles to sample hiddens from visibles
-            h1_linear_activation_vmap = dict((h, h.linear_activation(h1_in_vmap)) for h in latent_units)
-            h1_activation_vmap = dict((h, h.activation(h1_in_vmap)) for h in latent_units)
-            h1_sample_cd_vmap = dict((h, h.sample(h1_in_vmap, cd=True)) for h in latent_units) # with mf
-            h1_sample_vmap = dict((h, h.sample(h1_in_vmap)) for h in latent_units) # without mf
+            h1_linear_activation_vmap = dict((h, h.linear_activation(h1_in_vmap)) for h in hidden_units)
+            h1_activation_vmap = dict((h, h.activation(h1_in_vmap)) for h in hidden_units)
+            h1_sample_cd_vmap = dict((h, h.sample(h1_in_vmap, cd=True)) for h in hidden_units) # with mf
+            h1_sample_vmap = dict((h, h.sample(h1_in_vmap)) for h in hidden_units) # without mf
             
 
         # get the v1 values in a fixed order
-        v1_linear_activation_values = [v1_linear_activation_vmap[u] for u in input_units]
-        v1_activation_values = [v1_activation_vmap[u] for u in input_units]
-        v1_sample_cd_values = [v1_sample_cd_vmap[u] for u in input_units]
-        v1_sample_values = [v1_sample_vmap[u] for u in input_units]
+        v1_linear_activation_values = [v1_linear_activation_vmap[u] for u in visible_units]
+        v1_activation_values = [v1_activation_vmap[u] for u in visible_units]
+        v1_sample_cd_values = [v1_sample_cd_vmap[u] for u in visible_units]
+        v1_sample_values = [v1_sample_vmap[u] for u in visible_units]
         
         # same for the h1 values
-        h1_linear_activation_values = [h1_linear_activation_vmap[u] for u in latent_units]
-        h1_activation_values = [h1_activation_vmap[u] for u in latent_units]
-        h1_sample_cd_values = [h1_sample_cd_vmap[u] for u in latent_units]
-        h1_sample_values = [h1_sample_vmap[u] for u in latent_units]
+        h1_linear_activation_values = [h1_linear_activation_vmap[u] for u in hidden_units]
+        h1_activation_values = [h1_activation_vmap[u] for u in hidden_units]
+        h1_sample_cd_values = [h1_sample_cd_vmap[u] for u in hidden_units]
+        h1_sample_values = [h1_sample_vmap[u] for u in hidden_units]
         
         return v1_linear_activation_values + v1_activation_values + v1_sample_cd_values + v1_sample_values + \
                h1_linear_activation_values + h1_activation_values + h1_sample_cd_values + h1_sample_values
@@ -92,15 +92,15 @@ def cd_stats(rbm, v0_vmap, input_units, latent_units, context_units=[], k=1, mea
     exp_output_list = [out[-1] for out in exp_output_all_list]
             
     # reconstruct vmaps from the exp_output_list.
-    n_input, n_latent = len(input_units), len(latent_units)
-    vk_linear_activation_vmap = dict(zip(input_units, exp_output_list[0:n_input]))
-    vk_activation_vmap = dict(zip(input_units, exp_output_list[n_input:2*n_input]))
-    vk_sample_cd_vmap = dict(zip(input_units, exp_output_list[2*n_input:3*n_input]))
-    vk_sample_vmap = dict(zip(input_units, exp_output_list[3*n_input:4*n_input]))
-    hk_linear_activation_vmap = dict(zip(latent_units, exp_output_list[4*n_input:4*n_input+n_latent]))
-    hk_activation_vmap = dict(zip(latent_units, exp_output_list[4*n_input+n_latent:4*n_input+2*n_latent]))
-    hk_sample_cd_vmap = dict(zip(latent_units, exp_output_list[4*n_input+2*n_latent:4*n_input+3*n_latent]))
-    hk_sample_vmap = dict(zip(latent_units, exp_output_list[4*n_input+3*n_latent:4*n_input+4*n_latent]))
+    n_input, n_latent = len(visible_units), len(hidden_units)
+    vk_linear_activation_vmap = dict(zip(visible_units, exp_output_list[0:n_input]))
+    vk_activation_vmap = dict(zip(visible_units, exp_output_list[n_input:2*n_input]))
+    vk_sample_cd_vmap = dict(zip(visible_units, exp_output_list[2*n_input:3*n_input]))
+    vk_sample_vmap = dict(zip(visible_units, exp_output_list[3*n_input:4*n_input]))
+    hk_linear_activation_vmap = dict(zip(hidden_units, exp_output_list[4*n_input:4*n_input+n_latent]))
+    hk_activation_vmap = dict(zip(hidden_units, exp_output_list[4*n_input+n_latent:4*n_input+2*n_latent]))
+    hk_sample_cd_vmap = dict(zip(hidden_units, exp_output_list[4*n_input+2*n_latent:4*n_input+3*n_latent]))
+    hk_sample_vmap = dict(zip(hidden_units, exp_output_list[4*n_input+3*n_latent:4*n_input+4*n_latent]))
             
     # TODO: some of these are not used... maybe they'll come in handy later? If not, remove them.
     

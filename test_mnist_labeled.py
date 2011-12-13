@@ -75,7 +75,7 @@ initial_vmap = { rbm.v: T.matrix('v'), rbm.s: T.tensor3('s') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], context_units=[rbm.s], k=1)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], context_units=[rbm.s], k=1)
 
 umap = {}
 for params in rbm.params_list:
