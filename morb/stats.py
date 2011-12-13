@@ -5,7 +5,7 @@ import numpy as np
 import theano
 
 
-def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, mean_field_for_visibles=True, mean_field_for_stats=True):
+def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, mean_field_for_visibles=True, mean_field_for_stats=True, persistent_vmap=None):
     # with 'mean_field_for_visibles', we can control whether hiddens are sampled based on visibles samples or visible means in the CD iterations.
     # This requires that the Units instances have samplers that return means when cd=True.
     # disabling this option is useful when one doesn't want to apply mean field during the gibbs sampling,
@@ -80,6 +80,14 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
         return v1_linear_activation_values + v1_activation_values + v1_sample_cd_values + v1_sample_values + \
                h1_linear_activation_values + h1_activation_values + h1_sample_cd_values + h1_sample_values
     
+    
+    # support for persistent CD
+    if persistent_vmap is None:
+        chain_start = exp_latent
+    else:
+        chain_start = [persistent_vmap[u] for u in hidden_units]
+    
+    
     # The 'outputs_info' keyword argument of scan configures how the function outputs are mapped to the inputs.
     # in this case, we want the h1_sample_vmap values to map onto the function arguments, so they become
     # h0_sample_vmap values in the next iteration. To this end, we construct outputs_info as follows:
@@ -103,6 +111,11 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
     hk_sample_vmap = dict(zip(hidden_units, exp_output_list[4*n_input+3*n_latent:4*n_input+4*n_latent]))
             
     # TODO: some of these are not used... maybe they'll come in handy later? If not, remove them.
+    
+    # add the Theano updates for the persistent CD states:
+    if persistent_vmap is not None:
+        for u, v in persistent_vmap.items():
+            theano_updates[v] = hk_sample_vmap[u]
     
     linear_activation_data_vmap = v0_vmap.copy()
     linear_activation_data_vmap.update(h0_linear_activation_vmap)

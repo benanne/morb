@@ -1,8 +1,4 @@
-TODO: pcd_stats (persistent CD)
-
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood.
-
-TODO: with PCD implemented, try to replicate the results obtained in the theano RBM tutorial (but keep in mind the optimisation criterium is slightly different).
 
 TODO: fill in the blanks in the license
 
