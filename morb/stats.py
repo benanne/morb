@@ -91,7 +91,7 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
     # The 'outputs_info' keyword argument of scan configures how the function outputs are mapped to the inputs.
     # in this case, we want the h1_sample_vmap values to map onto the function arguments, so they become
     # h0_sample_vmap values in the next iteration. To this end, we construct outputs_info as follows:
-    outputs_info = [None] * (len(exp_input)*4) + [None] * (len(exp_latent)*3) + list(exp_latent)
+    outputs_info = [None] * (len(exp_input)*4) + [None] * (len(exp_latent)*3) + list(chain_start)
     # 'None' indicates that this output is not used in the next iteration.
     # We need the non-cd samples as input! so h1_sample_vmap becomes h)_sample_vmap
     
