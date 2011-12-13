@@ -1,9 +1,8 @@
-TODO: verify correctness of the convolutional parameters implementation, because it does some pretty weird things to MNIST.
-  - if something is wrong, the error is probably in the gradient. test with a single minibatch to see if that makes any diference.
-
 TODO: pcd_stats (persistent CD)
 
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood.
+
+TODO: with PCD implemented, try to replicate the results obtained in the theano RBM tutorial (but keep in mind the optimisation criterium is slightly different).
 
 TODO: fill in the blanks in the license
 
@@ -40,7 +39,7 @@ TODO: ReLU units
 
 TODO: in a conditional RBM (f.e. with visibles v, hiddens h and context x), CD won't work if the context variable isn't supplied. This is because CD will try to update the parameters tying h/v and x regardless of whether x was supplied as context. It would be nice if this didn't happen, i.e. when x is not supplied as context, all parameters tying x are simply ignored. This would also avoid some hard-to-decipher error messages.
 
-TODO: Fast persistent CD (FPCD)? (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
+TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
 
 TODO: supervised finetuning - how does this fit in the framework (separate trainers and updaters?)
 
@@ -49,14 +48,11 @@ TODO: Look into hessian-free optimisation, maybe that fits in as well? (although
 TODO: ParamUpdaters compute additive updates for the parameters. But what if a more exotic training algorithm is used that does not use additive updates (multiplicative updates are a possibility)? Maybe it's better to let the ParamUpdater perform the addition as well?
 
 TODO: add docstrings everywhere
-
-TODO: Fast Persistent CD (Tijmen)
  
-TODO: Maybe as an exercise, also implement something more exotic:
-- Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
-- find out what else there is - 'pseudo-likelihood algorithms'?
+TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
 
 TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
+  + convention: minibatch contributions are SUMMED rather than averaged.
 
 TODO: free energy? (where it can be computed)
 

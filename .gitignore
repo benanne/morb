@@ -1,0 +1,3 @@
+*.pyc
+*~
+mnist.pkl.gz

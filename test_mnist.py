@@ -34,26 +34,29 @@ test_set_x, test_set_y = test_set
 
 
 # TODO DEBUG
-train_set_x = train_set_x[:10000]
+# train_set_x = train_set_x[:10000]
 valid_set_x = valid_set_x[:1000]
 
 
 n_visible = train_set_x.shape[1]
-n_hidden = 100
+n_hidden = 500
+mb_size = 20
+k = 15
+learning_rate = 0.1
+epochs = 15
 
 
 print ">> Constructing RBM..."
 rbm = rbms.SigmoidBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
-# try to calculate weight updates using CD-1 stats
+# try to calculate weight updates using CD stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, input_units=[rbm.v], latent_units=[rbm.h], k=k)
 
 umap = {}
 for params in rbm.params_list:
-    # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
-    pu =  0.001 * param_updaters.CDParamUpdater(params, s)
+    pu =  (learning_rate / float(mb_size)) * param_updaters.CDParamUpdater(params, s)
     umap[params] = pu
 
 print ">> Compiling functions..."
@@ -65,8 +68,8 @@ e_data = rbm.energy(s['data'])
 e_model = rbm.energy(s['model'])
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
-train = t.compile_function(initial_vmap, mb_size=100, monitors=[m, e_data, e_model], name='train', mode=mode)
-evaluate = t.compile_function(initial_vmap, mb_size=100, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', train=False, mode=mode)
+train = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, e_data, e_model], name='train', mode=mode)
+evaluate = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', train=False, mode=mode)
 
 
 
@@ -105,7 +108,6 @@ def sample_evolution(start, ns=100): # start = start data
 
 # TRAINING 
 
-epochs = 200
 print ">> Training for %d epochs..." % epochs
 
 mses_train_so_far = []

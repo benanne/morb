@@ -49,7 +49,7 @@ visible_maps = 1
 hidden_maps = 50 # 100 # 50
 filter_height = 8 # 28 # 8
 filter_width = 8 # 28 # 8
-mb_size = 10
+mb_size = 1 # 10
 
 
 
