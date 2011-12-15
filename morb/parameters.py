@@ -257,6 +257,42 @@ class ThirdOrderParameters(Parameters):
 
 
 
+class ThirdOrderFactoredParameters(Parameters):
+    """
+    Factored 3rd order parameters, connecting three Units instances. Each factored
+    parameter matrix has dimensions (units_size, num_factors).
+    """
+    def __init__(self, rbm, units_list, num_factors, variables, name=None):
+        super(ThirdOrderFactoredParameters, self).__init__(rbm, units_list, name=name)
+        assert len(units_list) == 3
+        assert len(variables) == 3
+        self.variables = variables
+        self.W0 = variables[0]
+        self.W1 = variables[1]
+        self.W2 = variables[2]
+        self.u0 = units_list[0]
+        self.u1 = units_list[1]
+        self.u2 = units_list[2]
+        self.prod0 = lambda vmap: T.dot(vmap[self.u0], self.W0) # (mb, f)
+        self.prod1 = lambda vmap: T.dot(vmap[self.u1], self.W1) # (mb, f)
+        self.prod2 = lambda vmap: T.dot(vmap[self.u2], self.W2) # (mb, f)
+        self.terms[self.u0] = lambda vmap: T.dot(self.prod1(vmap) * self.prod2(vmap), self.W0.T) # (mb, u0)
+        self.terms[self.u1] = lambda vmap: T.dot(self.prod0(vmap) * self.prod2(vmap), self.W1.T) # (mb, u1)
+        self.terms[self.u2] = lambda vmap: T.dot(self.prod0(vmap) * self.prod1(vmap), self.W2.T) # (mb, u2)
+                
+    def gradient(self, vmap):
+        g0 = T.dot(vmap[self.u0].T, self.prod1(vmap) * self.prod2(vmap)) # (u0, f)
+        g1 = T.dot(vmap[self.u1].T, self.prod0(vmap) * self.prod2(vmap)) # (u1, f)
+        g2 = T.dot(vmap[self.u2].T, self.prod0(vmap) * self.prod1(vmap)) # (u2, f)
+        # the T.dot also sums out the minibatch dimension
+        return [g0, g1, g2]
+        
+    def energy_term(self, vmap):
+        return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1])
+        # sum is over the minibatch and the u1 dimension.
+
+
+
 # TODO: Beta?
 class BetaParameters(Parameters):
     def __init__(self, rbm, units_list, W1, W2, U1, U2, name=None):
