@@ -1,4 +1,5 @@
 TODO: 3-way parameters
+  - find some simple task to test this with! it has to be VERY simple because the number of parameters is cubic.
 
 TODO: 3-way factored parameters
 
@@ -29,6 +30,7 @@ TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
 TODO: gaussian units met learnt variance (gescheiden en samen)
   
 TODO: symmetric beta units
+    - instead of creating separate 'betaparameters', it might be a better idea to create some kind of wrapper for Units instances that functions as 1 - u (or just any transformation). Then a symmetric beta rbm can be implemented with the existing ProdParameters.
 
 TODO: ReLU units
 
@@ -52,6 +54,8 @@ TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but als
 TODO: free energy (where it can be computed)
 
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
+
+TODO: spike and slab RBMs?
 
 
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
