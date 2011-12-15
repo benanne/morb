@@ -1,12 +1,10 @@
-TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood.
+TODO: 3-way parameters
 
-TODO: fill in the blanks in the license
+TODO: 3-way factored parameters
 
 TODO: gaussian units (sigma=1)
 
 TODO: truncated exponential units
-
-TODO: 3-way parameters en 3-way factored parameters - veranderen er nog andere dingen?
 
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN
@@ -26,6 +24,7 @@ TODO: test 1D convolution
 
 TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
   ook interessant hierbij: parameter tying! kan dit in het framework gepast worden?
+  IOTRBM en FIOTRBM zijn ook interessante modellen om eens na te bouwen.
   
 TODO: gaussian units met learnt variance (gescheiden en samen)
   
@@ -50,7 +49,9 @@ TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_t
 TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
   + convention: minibatch contributions are SUMMED rather than averaged.
 
-TODO: free energy? (where it can be computed)
+TODO: free energy (where it can be computed)
+
+TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
 
 
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:

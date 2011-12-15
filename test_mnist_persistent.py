@@ -34,7 +34,7 @@ test_set_x, test_set_y = test_set
 
 
 # TODO DEBUG
-train_set_x = train_set_x[:10000]
+# train_set_x = train_set_x[:10000]
 valid_set_x = valid_set_x[:1000]
 
 
