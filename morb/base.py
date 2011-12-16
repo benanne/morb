@@ -44,6 +44,9 @@ class Units(object):
         a = self.activation(vmap)
         return self.sampler.apply(a, **kwargs)
         
+    def free_energy_term(self, vmap):
+        raise NotImplementedError("Free energy calculation not supported for this Units instance")
+        
     def __repr__(self):
         return "<morb:Units '%s' with sampler '%s' and activation function '%s'>" % (self.name, self.sampler.name, self.activation_function.name)
           
@@ -283,6 +286,29 @@ class RBM(object):
         terms = [params.energy_term(vmap) for params in self.params_list]
         # the energy is the sum of the energy terms for each of the parameters.
         return sum(terms)
+        
+    def free_energy(self, units_list, vmap):
+        """
+        Calculates the free energy with respect to the units given in units_list.
+        This has to be a list of Units instances that are independent of eachother
+        given the other units, and each of them has to have a free_energy_term.
+        """
+        
+        # first, get the terms of the energy that don't involve any of the given units. These terms are unchanged.
+        unchanged_terms = []
+        for params in self.params_list:
+            if not any(params.affects(u) for u in units_list):
+                # if none of the given Units instances are affected by the current Parameters instance,
+                # this term is unchanged (it's the same as in the energy function)
+                unchanged_terms.append(params.energy_term(vmap))
+
+        # all other terms are affected by the summing out of the units.        
+        affected_terms = [u.free_energy_term(vmap) for u in units_list]
+        
+        import pdb; pdb.set_trace()
+        
+        # note that this separation breaks down if there are dependencies between the Units instances given.
+        return sum(unchanged_terms + affected_terms)
 
     def __repr__(self):
         units_names = ", ".join(("'%s'" % u.name) for u in self.units_list)

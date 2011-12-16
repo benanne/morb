@@ -1,7 +1,18 @@
 from morb.base import units_type, Units
 from morb import samplers, activation_functions
+import theano.tensor as T
 
-BinaryUnits = units_type(activation_functions.sigmoid, samplers.bernoulli_mf)
+# BinaryUnits = units_type(activation_functions.sigmoid, samplers.bernoulli_mf)
+
+class BinaryUnits(Units):
+    def __init__(self, rbm, name=None):
+        super(BinaryUnits, self).__init__(rbm, activation_functions.sigmoid, samplers.bernoulli_mf, name=name)
+
+    def free_energy_term(self, vmap):
+        # softplus of unit activations, summed over # units
+        s = - T.nnet.softplus(self.linear_activation(vmap))
+        # sum over all but the minibatch dimension
+        return T.sum(s, axis=range(1, s.ndim))
 
 SigmoidUnits = units_type(activation_functions.sigmoid, samplers.bernoulli_always_mf)
 
