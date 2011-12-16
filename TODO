@@ -3,6 +3,8 @@ TODO: truncated exponential units, exponential units
 
 TODO: free energy (given a BinaryUnits instance, calculate the free energy of the others)
     # what to do with context units?
+    # what when there are multiple types of hidden units?
+    # what when something like 1-h occurs in the parameters (betaparameters!)?
 
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN
