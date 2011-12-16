@@ -305,8 +305,6 @@ class RBM(object):
         # all other terms are affected by the summing out of the units.        
         affected_terms = [u.free_energy_term(vmap) for u in units_list]
         
-        import pdb; pdb.set_trace()
-        
         # note that this separation breaks down if there are dependencies between the Units instances given.
         return sum(unchanged_terms + affected_terms)
 

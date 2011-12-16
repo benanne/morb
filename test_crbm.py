@@ -52,10 +52,11 @@ print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)
 m = monitors.reconstruction_mse(s, rbm.v)
 mce = monitors.reconstruction_crossentropy(s, rbm.v)
+free_energy = T.mean(rbm.free_energy([rbm.h], s['data'])) # take the mean over the minibatch.
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
-train = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce], name='train', mode=mode)
-evaluate = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce], train=False, name='evaluate', mode=mode)
+train = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce, free_energy], name='train', mode=mode)
+evaluate = t.compile_function(initial_vmap, mb_size=32, monitors=[m, mce, free_energy], train=False, name='evaluate', mode=mode)
 
 epochs = 200
 print ">> Training for %d epochs..." % epochs
@@ -64,16 +65,18 @@ print ">> Training for %d epochs..." % epochs
 for epoch in range(epochs):
     costs_train = [costs for costs in train({ rbm.v: data_train, rbm.x: data_context_train })]
     costs_eval = [costs for costs in evaluate({ rbm.v: data_eval, rbm.x: data_context_eval })]
-    mses_train, ces_train = zip(*costs_train)
-    mses_eval, ces_eval = zip(*costs_eval)
+    mses_train, ces_train, fes_train = zip(*costs_train)
+    mses_eval, ces_eval, fes_eval = zip(*costs_eval)
     
     mse_train = np.mean(mses_train)
     ce_train = np.mean(ces_train)
+    fe_train = np.mean(fes_train)
     mse_eval = np.mean(mses_eval)
     ce_eval = np.mean(ces_eval)
+    fe_eval = np.mean(fes_eval)
     
     print "Epoch %d" % epoch
-    print "training set: MSE = %.6f, CE = %.6f" % (mse_train, ce_train)
-    print "validation set: MSE = %.6f, CE = %.6f" % (mse_eval, ce_eval)
+    print "training set: MSE = %.6f, CE = %.6f, FE = %.2f" % (mse_train, ce_train, fe_train)
+    print "validation set: MSE = %.6f, CE = %.6f, FE = %.2f" % (mse_eval, ce_eval, fe_eval)
 
 
