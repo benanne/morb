@@ -102,9 +102,6 @@ class Parameters(object):
     def affects(self, units):
         return (units in self.units_list)
         
-    def affects_all(self, units_list):
-        return all(self.affects(units) for units in units_list)
-        
     def __repr__(self):
         units_names = ", ".join(("'%s'" % u.name) for u in self.units_list)
         return "<morb:Parameters '%s' affecting %s>" % (self.name, units_names)
@@ -248,12 +245,6 @@ class RBM(object):
         return a list of all Parameters that contribute a term to the activation of Units units.
         """
         return [param for param in self.params_list if param.affects(units)]
-        
-    def params_affecting_all(self, units_list):
-        """
-        return a list of all Parameters that contribute a term to the activations of ALL Units in the given units_list.
-        """
-        return [param for param in self.params_list if param.affects_all(units_list)]
         
     def dependent_units(self, given_units_list):
         """
