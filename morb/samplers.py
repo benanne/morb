@@ -1,4 +1,4 @@
-from morb.base import sampler
+from morb.base import sampler, Sampler
 
 import theano
 import theano.tensor as T
@@ -19,7 +19,7 @@ def bernoulli(a, **kwargs):
 def bernoulli_mf(a, **kwargs):
     # if sampling in CD, use mean field
     if 'cd' in kwargs and kwargs['cd'] == True:
-        return a
+        return a # the parameter of the bernoulli distribution is also the mean
     else:
         return bernoulli.apply(a)
         
@@ -32,10 +32,33 @@ def bernoulli_always_mf(a, **kwargs):
 gaussian_always_mf = bernoulli_always_mf # this comes down to the same thing;
 # for both the bernoulli and the gaussian distribution, the parameter is the mean, so
 # working with the mean comes down to using the parameter directly instead of sampling.
+
+class GaussianSampler(Sampler):
+    def __init__(self, std=1.0):
+        super(Sampler, self).__init__()
+        self.std = std
         
+    def apply(self, a, **kwargs):
+        return theano_rng.normal(size=a.shape, avg=a, std=self.std, dtype=theano.config.floatX)
+        
+class GaussianMfSampler(Sampler):
+    def __init__(self, std=1.0):
+        super(Sampler, self).__init__()
+        self.g = GaussianSampler(std)
+        
+    def apply(self, a, **kwargs):
+        if 'cd' in kwargs and kwargs['cd'] == True:
+            return a
+        else:
+            return self.g.apply(a)
+
+gaussian = GaussianSampler(std=1.0)
+gaussian_mf = GaussianMfSampler(std=1.0)
+# TODO: test gaussian and gaussian_mf       
+
 
 @sampler
-def multinomial(a):
+def multinomial(a, **kwargs):
     # 0 = minibatches
     # 1 = units
     # 2 = states
@@ -57,7 +80,7 @@ def multinomial_with_zero(a):
     s0 = self.theano_rng.multinomial(n=1, pvals=r0, dtype=theano.config.floatX)
     s = s0[:, :-1] # cut off zero state column
     return s.reshape(a.shape) # reshape to original shape
-
+    # TODO: test this sampler
 
 
 

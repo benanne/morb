@@ -1,6 +1,7 @@
-TODO: gaussian units (sigma=1)
-
 TODO: truncated exponential units
+
+TODO: free energy (given a BinaryUnits instance, calculate the free energy of the others)
+    # what to do with context units?
 
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN
@@ -46,11 +47,22 @@ TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_t
 TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
   + convention: minibatch contributions are SUMMED rather than averaged.
 
-TODO: free energy (where it can be computed)
+TODO: mcRBM
+  - requires HMC for sampling of visibles given hiddens => custom sampler for the visibles?
+  - this in turn requires free energy, I think
 
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
 
 TODO: spike and slab RBMs?
+
+TODO: AIS
+
+TODO: Exact partition function calculation
+  - can this be formulated for a general RBM model easily?
+  - it should also be possible to select the type of units that is summed over numerically, as this is determines
+    the runtime of the computation.
+
+TODO: deep boltzmann machines?
 
 
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:

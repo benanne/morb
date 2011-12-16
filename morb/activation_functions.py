@@ -8,7 +8,7 @@ def sigmoid(x):
     return T.nnet.sigmoid(x)
     
 @activation_function
-def identity(*x):
+def identity(x):
     return x
 
 @activation_function

@@ -293,6 +293,7 @@ class ThirdOrderFactoredParameters(Parameters):
 
 
 
+
 # TODO: Beta?
 class BetaParameters(Parameters):
     def __init__(self, rbm, units_list, W1, W2, U1, U2, name=None):
