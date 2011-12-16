@@ -1,4 +1,5 @@
-TODO: truncated exponential units
+TODO: truncated exponential units, exponential units
+    - with exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
 
 TODO: free energy (given a BinaryUnits instance, calculate the free energy of the others)
     # what to do with context units?
