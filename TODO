@@ -6,9 +6,6 @@ TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN
     - DBN training (laag-per-laag)
     - DBN inference
-   
-TODO: model visualisation plugin using pydot? rbm.draw() or something.
-  It would plot the dependencies and the Parameters objects affecting those dependencies. (this way it will also work sensibly for third order etc.)
     
 TODO: passen autoencoders ook binnen dit raamwerk? mss moeten bepaalde dingen dan hernoemd worden...
 
@@ -79,6 +76,8 @@ TODO: rather than implicitly assuming everywhere that a parameters instance with
     * everywhere sums of contributions are computed, the deps should now be checked + also adapt rbm.dependent_units
     - this adds complexity, and the gains are limited
 
+TODO: model visualisation plugin using pydot? rbm.draw() or something.
+  It would plot the dependencies and the Parameters objects affecting those dependencies. (this way it will also work sensibly for third order etc.)
 
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
 https://github.com/deeplearningais/CUV/tree/master/examples/rbm

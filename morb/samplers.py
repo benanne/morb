@@ -28,6 +28,8 @@ def bernoulli_always_mf(a, **kwargs):
     # this can be used for bernoulli visibles that are actually used to model continuous data in [0,1].
     # WARNING: NEVER USE THIS FOR HIDDENS. Use bernoulli_mf instead.
     return a
+
+
     
 gaussian_always_mf = bernoulli_always_mf # this comes down to the same thing;
 # for both the bernoulli and the gaussian distribution, the parameter is the mean, so
@@ -57,6 +59,8 @@ gaussian_mf = GaussianMfSampler(std=1.0)
 # TODO: test gaussian and gaussian_mf       
 
 
+
+
 @sampler
 def multinomial(a, **kwargs):
     # 0 = minibatches
@@ -83,6 +87,8 @@ def multinomial_with_zero(a, **kwargs):
     # TODO: test this sampler
 
 
+
+
 @sampler
 def no_sampler(a, **kwargs):
     raise NotImplementedError("Sampler not implemented")
@@ -91,14 +97,41 @@ def no_sampler(a, **kwargs):
 
 
 
-def tmin(a, b):
-    return T.switch(a < b, a, b)
+class TruncatedExponentialSampler(Sampler):
+    def __init__(self, maximum=1.0):
+        super(Sampler, self).__init__()
+        self.maximum = maximum
+        
+    def apply(self, lambdas, **kwargs):
+        uniform_samples = theano_rng.uniform(size=lambdas.shape, dtype=theano.config.floatX)
+        return (-1 / lambdas) * T.log(1 - uniform_samples*(1 - T.exp(-lambdas * self.maximum)))
+        
+class TruncatedExponentialAlwaysMfSampler(Sampler):
+    def __init__(self, maximum=1.0):
+        super(Sampler, self).__init__()
+        self.maximum = maximum
+        
+    def apply(self, lambdas, **kwargs):
+        return (1 / lambdas) - (self.maximum / (T.exp(self.maximum*lambdas) - 1)) # TODO: something is wrong with this formula
+        
+
+class TruncatedExponentialMfSampler(Sampler):
+    def __init__(self, maximum=1.0):
+        super(Sampler, self).__init__()
+        self.t = TruncatedExponentialSampler(maximum)
+        self.mf = TruncatedExponentialAlwaysMfSampler(maximum)
+        
+    def apply(self, a, **kwargs):
+        if 'cd' in kwargs and kwargs['cd'] == True:
+            return self.mf.apply(a)
+        else:
+            return self.t.apply(a)
+
+truncated_exponential = TruncatedExponentialSampler(maximum=1.0)
+truncated_exponential_mf = TruncatedExponentialMfSampler(maximum=1.0)
+truncated_exponential_always_mf = TruncatedExponentialAlwaysMfSampler(maximum=1.0)
+
     
-def tmax(a, b):
-    return T.switch(a > b, a, b)
-    
-@sampler
-def beta(a, b): # TODO LATER: MOET MET TENSOREN KUNNEN WERKEN
-    # best op basis van een gamma_sampler doen
-    # TODO LATER
-    pass
+
+
+
