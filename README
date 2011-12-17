@@ -44,6 +44,7 @@ is trained on an unspecified dataset using one-step contrastive divergence
   from morb import base, units, parameters, stats, param_updaters, \
                    trainers, monitors
   import numpy
+  import theano.tensor as T
 
   ## define hyperparameters
   learning_rate = 0.01
@@ -74,8 +75,8 @@ is trained on an unspecified dataset using one-step contrastive divergence
   ## create an updater for each set of parameters
   umap = {}
   for params in [rbm.W, rbm.bv, rbm.bh]:
-      pu =  learning_rate * (param_updaters.CDParamUpdater(params, s) - \
-                             decay * param_updaters.DecayParamUpdater(params))
+      pu = learning_rate * (param_updaters.CDParamUpdater(params, s) - \
+                            decay * param_updaters.DecayParamUpdater(params))
       umap[params] = pu
 
   ## monitor reconstruction cost during training
