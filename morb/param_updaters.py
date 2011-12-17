@@ -13,6 +13,7 @@ class DecayParamUpdater(ParamUpdater):
         return self.parameters.variables
         # weight decay: the update == the parameter values themselves
         # (decay constant is taken care of by ScaleParamUpdater)
+        # TODO: maybe this should return the negative of the parameters?
         
 
 class MomentumParamUpdater(ParamUpdater):
