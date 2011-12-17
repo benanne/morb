@@ -27,3 +27,7 @@ def softmax(x):
     
     # reshape back to original shape
     return s.reshape(x.shape)
+    
+@activation_function
+def no_activation(x):
+    raise NotImplementedError("Activation function not implemented")

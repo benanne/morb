@@ -73,7 +73,7 @@ def multinomial(a, **kwargs):
     
 
 @sampler
-def multinomial_with_zero(a):
+def multinomial_with_zero(a, **kwargs):
     # like multinomial, but include a zero energy state (so it's possible that the outcome is all zeros.
     r = a.reshape((a.shape[0]*a.shape[1], a.shape[2]))   
     r0 = T.concatenate([r, T.zeros_like(r)[:, 0:1]], axis=1) # add row of zeros for zero state
@@ -82,6 +82,10 @@ def multinomial_with_zero(a):
     return s.reshape(a.shape) # reshape to original shape
     # TODO: test this sampler
 
+
+@sampler
+def no_sampler(a, **kwargs):
+    raise NotImplementedError("Sampler not implemented")
 
 
 

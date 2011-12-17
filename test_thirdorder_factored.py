@@ -47,7 +47,7 @@ initial_bh = np.zeros(n_hidden, dtype = theano.config.floatX)
 rbm = morb.base.RBM()
 rbm.v = units.SigmoidUnits(rbm, name='v') # visibles
 rbm.h = units.BinaryUnits(rbm, name='h') # hiddens
-rbm.x = units.SigmoidUnits(rbm, name='x') # context
+rbm.x = units.ContextUnits(rbm, name='x') # context
 
 Wv = theano.shared(value=initial_W(n_visible, n_factors), name='Wv')
 Wh = theano.shared(value=initial_W(n_hidden, n_factors), name='Wh')

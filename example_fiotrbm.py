@@ -1,10 +1,14 @@
 from morb import base, units, parameters, stats, param_updaters, trainers, monitors
 
+# This example shows how the FIOTRBM model from "Facial Expression Transfer with
+# Input-Output Temporal Restricted Boltzmann Machines" by Zeiler et al. (NIPS 
+# 2011) can be recreated in Morb.
+
 rbm = base.RBM()
-rbm.v = units.BinaryUnits(rbm) # output (visibles)
+rbm.v = units.GaussianUnits(rbm) # output (visibles)
 rbm.h = units.BinaryUnits(rbm) # latent (hiddens)
-rbm.s = units.BinaryUnits(rbm) # input (context)
-rbm.vp = units.BinaryUnits(rbm) # output history (context)
+rbm.s = units.ContextUnits(rbm) # input (context)
+rbm.vp = units.ContextUnits(rbm) # output history (context)
 
 initial_A = ...
 initial_B = ...

@@ -32,6 +32,8 @@ MeanFieldGaussianUnits = units_type(activation_functions.identity, samplers.gaus
 
 SoftmaxUnits = units_type(activation_functions.softmax, samplers.multinomial)
 
+ContextUnits = units_type(activation_functions.no_activation, samplers.no_sampler)
+
 class SymmetricBetaUnits(Units): # TODO
     # Symmetric because the hiddens switch between two beta distributions, not because
     # the parameters of the distribution are chosen to be equal (this is not the case).

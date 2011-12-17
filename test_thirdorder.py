@@ -49,7 +49,7 @@ initial_bh = np.zeros(n_hidden, dtype = theano.config.floatX)
 rbm = morb.base.RBM()
 rbm.v = units.SigmoidUnits(rbm, name='v') # visibles
 rbm.h = units.BinaryUnits(rbm, name='h') # hiddens
-rbm.x = units.SigmoidUnits(rbm, name='x') # context
+rbm.x = units.ContextUnits(rbm, name='x') # context
 
 rbm.W = parameters.ThirdOrderParameters(rbm, [rbm.v, rbm.h, rbm.x], theano.shared(value = initial_W, name='W'), name='W') # weights
 rbm.bv = parameters.BiasParameters(rbm, rbm.v, theano.shared(value = initial_bv, name='bv'), name='bv') # visible bias
