@@ -1,6 +1,3 @@
-TODO: rather than implicitly assuming everywhere that a parameters instance with a number of units instances as input ties all those units (bidirectionally), maybe parameters should explicitly define the dependencies they introduce. This allows for dependency checking where necessary (free energy computation would be one use case).
-    # problem: if the 'Parameters' class also encodes directions, we will need separate ProdParameters and DirectedProdParameters, for example. But maybe this isn't such a big deal? Or have only a single ProdParameters class, but allow to specify the dependency relations at instantiation.
-
 TODO: truncated exponential units, exponential units
     - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
@@ -11,6 +8,7 @@ TODO: wat glue code om RBMs te stacken in DBNs.
     - DBN inference
     
 TODO: model visualisation plugin using pydot? rbm.draw() or something.
+  It would plot the dependencies and the Parameters objects affecting those dependencies. (this way it will also work sensibly for third order etc.)
     
 TODO: passen autoencoders ook binnen dit raamwerk? mss moeten bepaalde dingen dan hernoemd worden...
 
@@ -24,9 +22,12 @@ TODO: optimised 1D convolution: visible_maps naar filter height, data (time) naa
 TODO: test 1D convolution
 
 TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
-  ook interessant hierbij: parameter tying! kan dit in het framework gepast worden?
-  IOTRBM en FIOTRBM zijn ook interessante modellen om eens na te bouwen.
-  
+  hierbij worden de parameters van de verschillende third order connecties ook getied. kan dit in het framework gepast worden?
+  - een naieve implementatie is om de updates voor eenzelfde variabele uit te middelen of op te tellen
+  - maar, het zou kunnen dat door zulke tying bepaalde assumpties niet meer opgaan.
+  - als het werkt is het echter wel een zeer elegante methode. Het wordt echter enkel ondersteund als de gebonden parameters dezelfde 'vorm' hebben, en dus door dezelfde shared variable kunnen voorgesteld worden.
+  => eens vragen naar de eventuele neveneffecten van parameter tying.
+
 TODO: gaussian units met learnt variance (gescheiden en samen)
   
 TODO: symmetric beta units
@@ -67,6 +68,16 @@ TODO: Exact partition function calculation
     the runtime of the computation.
 
 TODO: deep boltzmann machines?
+
+TODO: rather than implicitly assuming everywhere that a parameters instance with a number of units instances as input ties all those units (bidirectionally), maybe parameters should explicitly define the dependencies they introduce. This allows for dependency checking where necessary (free energy computation would be one use case).
+    # problem: if the 'Parameters' class also encodes directions, we will need separate ProdParameters and DirectedProdParameters, for example. But maybe this isn't such a big deal? Or have only a single ProdParameters class, but allow to specify the dependency relations at instantiation.
+    - each parameters object should be able to generate a 'dependency map', which maps Units instances to the other Units instances they depend on.
+    - for example, for prodparameters: { v: [h], h: [v] }
+    - the default would be to include all other units.
+    - each Parameters type can have its own way of manipulating this dependency map. For example, for ProdParameters or third order parameters, it would suffice to specify which parameters are context. Then the dependency list for the context Units would be empty.
+    - that way, specifying dependencies is optional, but it can still be used for stuff like model visualisation, or to perform dependency checks.
+    * everywhere sums of contributions are computed, the deps should now be checked + also adapt rbm.dependent_units
+    - this adds complexity, and the gains are limited
 
 
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:

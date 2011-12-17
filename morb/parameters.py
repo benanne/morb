@@ -262,7 +262,7 @@ class ThirdOrderFactoredParameters(Parameters):
     Factored 3rd order parameters, connecting three Units instances. Each factored
     parameter matrix has dimensions (units_size, num_factors).
     """
-    def __init__(self, rbm, units_list, num_factors, variables, name=None):
+    def __init__(self, rbm, units_list, variables, name=None):
         super(ThirdOrderFactoredParameters, self).__init__(rbm, units_list, name=name)
         assert len(units_list) == 3
         assert len(variables) == 3
