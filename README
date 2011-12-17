@@ -14,8 +14,9 @@ https://github.com/benanne/morb/blob/master/architecture.png
 
 A unit type is composed of a 'sampler' and an 'activation function'. For
 example, binary units are composed of a Bernoulli distribution sampler and a
-sigmoid activation function. Different activation functions and are available,
-and new ones can be defined. They can be combined easily into new unit types.
+sigmoid activation function. Different activation functions and samplers are
+available, and new ones can be defined. They can be combined easily into new
+unit types.
 
 The different types of parameters form the trainable part of the model. These
 include biases, regular weights, convolutional weights and third order weights,
@@ -26,18 +27,18 @@ with respect to the parameters.
 
 To train the model, one has to specify how the parameters should be updated in
 each step of the training process. This is possible by defining 'updaters',
-which can be composed. For example one can combine a contrastive divergence
+which can be composed. For example, one can combine a contrastive divergence
 updater with a weight decay updater and a sparsity regularisation updater.
 Momentum can also be applied with a momentum updater, which encapsulates another
 updater. Some updaters, like the contrastive divergence updater, calculate
-parameter updates from statistics obtained from training data.
+parameter updates from 'statistics' obtained from training data.
 
 Finally, a trainer is used to compile the symbolical parameter update
 expressions into a training function.
 
-Below is a simple example, where an RBM with binary visibles and binary hiddens
-is trained on an unspecified dataset using one-step contrastive divergence
-(CD-1), with some weight decay.
+Below is a simple example, in which an RBM with binary visibles and binary
+hiddens is trained on an unspecified dataset using one-step contrastive
+divergence (CD-1), with some weight decay.
 
 ---
 
