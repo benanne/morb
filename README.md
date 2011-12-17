@@ -16,7 +16,7 @@ To train the model, one has to specify how the parameters should be updated in e
 
 Finally, a **trainer** is used to compile the symbolical parameter update expressions into a training function.
 
-![Schematic diagram of Morb's RBM architecture](http://github.com/benanne/morb/blob/master/architecture.png)
+![Schematic diagram of Morb's RBM architecture](http://github.com/benanne/morb/raw/master/architecture.png)
 
 Example
 -------
