@@ -14,8 +14,8 @@ initial_Wv = ...
 initial_Wh = ...
 initial_Ws = ...
 
-rbm.A = parameters.ProdParameters(rbm, [self.vp, self.v], initial_A) # weights from past output to current output
-rbm.B = parameters.ProdParameters(rbm, [self.vp, self.h], initial_B) # weights from past output to hiddens
+rbm.A = parameters.ProdParameters(rbm, [rbm.vp, rbm.v], initial_A) # weights from past output to current output
+rbm.B = parameters.ProdParameters(rbm, [rbm.vp, rbm.h], initial_B) # weights from past output to hiddens
 rbm.bv = parameters.BiasParameters(rbm, rbm.v, initial_bv) # visible bias
 rbm.bh = parameters.BiasParameters(rbm, rbm.h, initial_bh) # hidden bias
 rbm.W = parameters.ThirdOrderFactoredParameters(rbm, [rbm.v, rbm.h, rbm.s], [initial_Wv, initial_Wh, initial_Ws]) # factored third order weights
