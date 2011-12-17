@@ -6,7 +6,7 @@ Introduction
 
 Morb is a toolbox for building and training Restricted Boltzmann Machine models in Theano. It is intended to be modular, so that a variety of different models can be built from their elementary parts. A second goal is for it to be extensible, so that new algorithms and techniques can be plugged in easily.
 
-The elementary parts in question are different types of **units**, which can be connected with different types of **parameters**. A schematic diagram of the architecture can be viewed here: https://github.com/benanne/morb/blob/master/architecture.png
+The elementary parts in question are different types of **units**, which can be connected with different types of **parameters**. A schematic diagram of the architecture can be viewed below.
 
 A unit type is composed of a **sampler** and an **activation function**. For example, binary units are composed of a *Bernoulli* distribution sampler and a *sigmoid* activation function. Different activation functions and samplers are available, and new ones can be defined. They can be combined easily into new unit types.
 
@@ -15,6 +15,8 @@ The different types of parameters form the trainable part of the model. These in
 To train the model, one has to specify how the parameters should be updated in each step of the training process. This is possible by defining **updaters**, which can be composed. For example, one can combine a *contrastive divergence updater* with a *weight decay updater* and a *sparsity regularisation updater*. Momentum can also be applied with a *momentum updater*, which encapsulates another updater. Some updaters, like the contrastive divergence updater, calculate parameter updates from **statistics** obtained from training data.
 
 Finally, a **trainer** is used to compile the symbolical parameter update expressions into a training function.
+
+![Schematic diagram of Morb's RBM architecture](https://github.com/benanne/morb/blob/master/architecture.png)
 
 Example
 -------
