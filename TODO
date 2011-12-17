@@ -1,16 +1,13 @@
-TODO: truncated exponential units, exponential units
-    - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
-    
-TODO: get rid of params.affects_all
-
-TODO: free energy (given a BinaryUnits instance, calculate the free energy of the others)
-    # what when something like 1-h occurs in the parameters (betaparameters!)?
-    # find out if it makes sense (and if it is at all useful) to define free energy terms for other unit types. It might be possible for (truncated) exponential units for example, but it requires computing an integral.
-    test free energy
-    
 TODO: rather than implicitly assuming everywhere that a parameters instance with a number of units instances as input ties all those units (bidirectionally), maybe parameters should explicitly define the dependencies they introduce. This allows for dependency checking where necessary (free energy computation would be one use case).
     # problem: if the 'Parameters' class also encodes directions, we will need separate ProdParameters and DirectedProdParameters, for example. But maybe this isn't such a big deal? Or have only a single ProdParameters class, but allow to specify the dependency relations at instantiation.
 
+TODO: truncated exponential units, exponential units
+    - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
+
+TODO: free energy (given a BinaryUnits instance, calculate the free energy of the others)
+    # what happens when something like 1-h occurs in the parameters (betaparameters!)?
+    # find out if it makes sense (and if it is at all useful) to define free energy terms for other unit types. It might be possible for (truncated) exponential units for example, but it requires computing an integral.
+    
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN
     - DBN training (laag-per-laag)
