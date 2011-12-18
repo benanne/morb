@@ -31,6 +31,7 @@ TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
   - maar, het zou kunnen dat door zulke tying bepaalde assumpties niet meer opgaan.
   - als het werkt is het echter wel een zeer elegante methode. Het wordt echter enkel ondersteund als de gebonden parameters dezelfde 'vorm' hebben, en dus door dezelfde shared variable kunnen voorgesteld worden.
   => eens vragen naar de eventuele neveneffecten van parameter tying.
+  - het FCRBM-model van de paper heeft ook lineaire features berekend uit de style labels. De gewichten tussen deze features en de style labels worden geupdatet door de CD-gradient terug te propageren. Hoe kan zoiets in het raamwerk gepast worden?
 
 TODO: gaussian units met learnt variance (gescheiden en samen)
   
