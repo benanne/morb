@@ -1,3 +1,7 @@
+TODO: maybe rethink the activation_function -> sampler architecture.
+  - a sigmoid activation function is simply the transformation needed to obtain the parameter of a bernoulli distribution. Does this split make sense at all? Shouldn't computing the distribution parameter from the linear activation be the sampler's responsibility? What are the benefits of having a separate 'activation function'?
+  - an 'activation function' like the sigmoid or the softmax should still be factored into a separate method (so it can be reused in different samplers), but this method should be called by the sampler, and not before it. ActivationFunctions should be eliminated as 'first class citizens', so to speak.
+
 TODO: truncated exponential units, exponential units
     - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
