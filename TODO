@@ -6,6 +6,8 @@ TODO: maybe rethink the activation_function -> sampler architecture.
 TODO: truncated exponential units, exponential units
     - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
+    - doesn't seem to converge on the simple example, maybe try mnist? non-mf version gives NaN after a while. Something is probably wrong.
+    
 
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN

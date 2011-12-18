@@ -65,7 +65,7 @@ s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h
 # We create a ParamUpdater for each Parameters instance.
 umap = {}
 for params in rbm.params_list:
-    pu =  0.0001 * param_updaters.CDParamUpdater(params, s) # the learning rate is 0.001
+    pu =  0.001 * param_updaters.CDParamUpdater(params, s) # the learning rate is 0.001
     umap[params] = pu
  
 # training

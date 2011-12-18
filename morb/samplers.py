@@ -112,7 +112,7 @@ class TruncatedExponentialAlwaysMfSampler(Sampler):
         self.maximum = maximum
         
     def apply(self, lambdas, **kwargs):
-        return (1 / lambdas) - (self.maximum / (T.exp(self.maximum*lambdas) - 1)) # TODO: something is wrong with this formula
+        return (1 / lambdas) + (self.maximum / (1 - T.exp(self.maximum*lambdas))) # TODO: something is wrong with this formula
         
 
 class TruncatedExponentialMfSampler(Sampler):
