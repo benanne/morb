@@ -51,7 +51,8 @@ rbm.x = units.ContextUnits(rbm, name='x') # context
 
 Wv = theano.shared(value=initial_W(n_visible, n_factors), name='Wv')
 Wh = theano.shared(value=initial_W(n_hidden, n_factors), name='Wh')
-Wx = theano.shared(value=initial_W(n_context, n_factors), name='Wx')
+# Wx = theano.shared(value=initial_W(n_context, n_factors), name='Wx')
+Wx = Wv # parameter tying
 
 rbm.W = parameters.ThirdOrderFactoredParameters(rbm, [rbm.v, rbm.h, rbm.x], [Wv, Wh, Wx], name='W') # weights
 rbm.bv = parameters.BiasParameters(rbm, rbm.v, theano.shared(value = initial_bv, name='bv'), name='bv') # visible bias

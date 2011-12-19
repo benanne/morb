@@ -217,13 +217,23 @@ class Trainer(object):
             theano_updates.update(s.get_theano_updates())
         
         if train:
-            # calculate updates
+            # calculate variable updates
+            # due to parameter tying, it is possible that there are multiple updaters for the same variable!
+            # So first, gather all updates for all the variables in a dictionary.
+            variable_updates = {}
             for p, pu in self.umap.items():
-                updated_variables = [v + u for v, u in zip(p.variables, pu.get_update())]
-                theano_updates.update(dict(zip(p.variables, updated_variables))) # variable updates
                 theano_updates.update(pu.get_theano_updates()) # ParamUpdater state updates
-                # (MomentumParamUpdater has state, for example)
-
+                for var, update in zip(p.variables, pu.get_update()):
+                    if var not in variable_updates:
+                        variable_updates[var] = [update]
+                    else:
+                        variable_updates[var].append(update)
+            
+            # sum all updates corresponding to a given variable and add it to the variable,
+            # and insert this as a theano update
+            for var, updates in variable_updates.items():
+                theano_updates[var] = var + sum(updates)
+                
         return theano_updates
 
 
