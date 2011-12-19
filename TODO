@@ -2,6 +2,9 @@ TODO: maybe rethink the activation_function -> sampler architecture.
   - a sigmoid activation function is simply the transformation needed to obtain the parameter of a bernoulli distribution. Does this split make sense at all? Shouldn't computing the distribution parameter from the linear activation be the sampler's responsibility? What are the benefits of having a separate 'activation function'?
   - an 'activation function' like the sigmoid or the softmax should still be factored into a separate method (so it can be reused in different samplers), but this method should be called by the sampler, and not before it. ActivationFunctions should be eliminated as 'first class citizens', so to speak.
   - in CD, the activation_vmap is ONLY used for sampling. It does not really have any other uses, does it? That means it can disappear there as well (which is what will happen if the application of the activation function is moved into the samplers).
+  => move the activation function application into the samplers
+  => remove 'activation' method of Units (and all calls to it)
+  => rename 'linear_activation' to 'activation' (also update all calls)
 
 TODO: truncated exponential units, exponential units
     - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
@@ -26,6 +29,7 @@ TODO: test 1D convolution
 
 TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
   - hierbij nog eens nadenken wat er met die lineaire features moet gebeuren (lineaire combinaties van style variables)
+  - is het niet mogelijk om gewoon door voor en na de trainfunctie een en ander in te voegen (en manueel een update toe te voegen) ook R mee te trainen? Evt. met een iets complexere Trainer die custom updates etc. ondersteunt?
   
 TODO: gaussian units met learnt variance (gescheiden en samen)
   
