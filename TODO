@@ -8,7 +8,6 @@ TODO: truncated exponential units, exponential units
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
     - doesn't seem to converge on the simple example, maybe try mnist? non-mf version gives NaN after a while. Something is probably wrong.
     
-
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN
     - DBN training (laag-per-laag)
@@ -26,12 +25,8 @@ TODO: optimised 1D convolution: visible_maps naar filter height, data (time) naa
 TODO: test 1D convolution
 
 TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
-  hierbij worden de parameters van de verschillende third order connecties ook getied. kan dit in het framework gepast worden?
-  - een naieve implementatie is om de updates voor eenzelfde variabele uit te middelen of op te tellen
-  - maar, het zou kunnen dat door zulke tying bepaalde assumpties niet meer opgaan.
-  - als het werkt is het echter wel een zeer elegante methode. Het wordt echter enkel ondersteund als de gebonden parameters dezelfde 'vorm' hebben, en dus door dezelfde shared variable kunnen voorgesteld worden.
-  => eens vragen naar de eventuele neveneffecten van parameter tying.
-
+  - hierbij nog eens nadenken wat er met die lineaire features moet gebeuren (lineaire combinaties van style variables)
+  
 TODO: gaussian units met learnt variance (gescheiden en samen)
   
 TODO: symmetric beta units
@@ -89,7 +84,7 @@ TODO: model visualisation plugin using pydot? rbm.draw() or something.
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
 https://github.com/deeplearningais/CUV/tree/master/examples/rbm
 
-
+TODO: when parameters are being tied, it is interesting to be able to specify learning rates for each of the Parameters components individually, rather than for the ParamUpdater as a whole.
 
 
 
