@@ -3,6 +3,23 @@ from morb.base import Parameters
 import theano.tensor as T
 from theano.tensor.nnet import conv
 
+
+
+class FixedBiasParameters(Parameters):
+    # Bias fixed at -1, which is useful for some energy functions (like Gaussian with fixed variance, Beta)
+    def __init__(self, rbm, units, name=None):
+        super(FixedBiasParameters, self).__init__(rbm, [units], name=name)
+        self.variables = []
+        self.u = units
+        
+        self.terms[self.u] = lambda vmap: -T.ones_like(vmap[self.u])
+        
+    def gradient(self, vmap):
+        raise NotImplementedError("Fixed bias has no gradient")
+        
+    def energy_term(self, vmap):
+        return T.sum(vmap[self.u]) # NO minus sign! bias is -1 so this is canceled.
+        
         
 class ProdParameters(Parameters):
     def __init__(self, rbm, units_list, W, name=None):
@@ -290,25 +307,3 @@ class ThirdOrderFactoredParameters(Parameters):
     def energy_term(self, vmap):
         return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1])
         # sum is over the minibatch and the u1 dimension.
-
-
-
-
-# TODO: Beta?
-class BetaParameters(Parameters):
-    def __init__(self, rbm, units_list, W1, W2, U1, U2, name=None):
-        super(BetaParameters, self).__init__(rbm, units_list, name=name)
-        assert len(units_list) == 2
-        self.W1, self.W2, self.U1, self.U2 = W1, W2, U1, U2
-        self.variables = [W1, W2, U1, U2]
-        vu, hu = units_list
-        
-        self.terms[vu] = lambda vmap: (T.dot(vmap[hu], W1.T) + T.dot(1 - vmap[hu], W2.T), T.dot(vmap[hu], U1.T) + T.dot(1 - vmap[hu], U2.T)) # dit zijn alfa en beta
-        self.terms[hu] = lambda vmap: T.dot(W1 - W2, T.log(vmap[vu])) + T.dot(U1 - U2, T.log(1 - vmap[vu])) # dit gaat door de sigmoid
-        
-    def gradient(self, vmap):
-        pass # TODO LATER: this update has 4 components, for W1, W2, U1 and U2!
-        
-    def energy_term(self, vmap):
-        # TODO
-        pass

@@ -1,45 +1,52 @@
 from morb.base import units_type, Units
-from morb import samplers, activation_functions
+from morb import samplers
 import theano.tensor as T
 
 # BinaryUnits = units_type(activation_functions.sigmoid, samplers.bernoulli_mf)
 
 class BinaryUnits(Units):
-    def __init__(self, rbm, name=None):
-        super(BinaryUnits, self).__init__(rbm, activation_functions.sigmoid, samplers.bernoulli_mf, name=name)
+    def sample(self, vmap):
+        a = self.activation(vmap)
+        return samplers.bernoulli(a)
+        
+    def mean_field(self, vmap):
+        a = self.activation(vmap)
+        return samplers.bernoulli_mean(a)
 
     def free_energy_term(self, vmap):
         # softplus of unit activations, summed over # units
-        s = - T.nnet.softplus(self.linear_activation(vmap))
+        s = - T.nnet.softplus(self.activation(vmap))
         # sum over all but the minibatch dimension
         return T.sum(s, axis=range(1, s.ndim))
 
-SigmoidUnits = units_type(activation_functions.sigmoid, samplers.bernoulli_always_mf)
+SigmoidUnits = units_type(samplers.bernoulli_mean, samplers.bernoulli_mean)
 
-GaussianUnits = units_type(activation_functions.identity, samplers.gaussian_mf) # std = 1
+class GaussianPrecisionProxyUnits(ProxyUnits):
+    def __init__(self, rbm, units, name=None):
+        func = lambda x: x**2 / 2.0
+        super(GaussianPrecisionProxyUnits, self).__init__(rbm, units, func, name)
+        
+    def mean_field(self, vmap):
+        raise NotImplementedError("No mean field for now, sorry... still have to implement this.")
+        # TODO: implement E[x**2] for x gaussian
+       
 
-def gaussian_units_type(std, mean_field=True):
-    """
-    Factory method to create gaussian units with a given standard deviation
-    """
-    if mean_field:
-        sampler = samplers.GaussianMfSampler(std)
-    else:
-        sampler = samplers.GaussianSampler(std)
-    return units_type(activation_functions.identity, sampler)
+class GaussianUnits(Units):
+    def __init__(self, rbm, name=None):
+        super(GaussianUnits, self).__init__(rbm, name)
+        proxy_name = (name + "_precision" if name is not None else None)
+        self.precision_units = GaussianPrecisionProxyUnits(rbm, self, name=proxy_name)
 
-MeanFieldGaussianUnits = units_type(activation_functions.identity, samplers.gaussian_always_mf)
+    def sample(self, vmap):
+        a = self.activation(vmap)
+        return samplers.gaussian_fixed(a)
+        
+    def mean_field(self, vmap):
+        a = self.activation(vmap)
+        return samplers.gaussian_fixed_mean(a)
+        
+# TODO later: gaussian units with custom fixed variance (maybe per-unit). This probably requires two proxies.
 
-SoftmaxUnits = units_type(activation_functions.softmax, samplers.multinomial)
+SoftmaxUnits = units_type(samplers.multinomial)
 
-ContextUnits = units_type(activation_functions.no_activation, samplers.no_sampler)
-
-TruncatedExponentialUnits = units_type(activation_functions.identity, samplers.truncated_exponential)
-
-class SymmetricBetaUnits(Units): # TODO
-    # Symmetric because the hiddens switch between two beta distributions, not because
-    # the parameters of the distribution are chosen to be equal (this is not the case).
-    pass
-    
-class ReLUUnits(Units): # TODO
-    pass
+TruncatedExponentialUnits = units_type(samplers.truncated_exponential, samplers.truncated_exponential_mean)

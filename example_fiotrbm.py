@@ -7,8 +7,8 @@ from morb import base, units, parameters, stats, param_updaters, trainers, monit
 rbm = base.RBM()
 rbm.v = units.GaussianUnits(rbm) # output (visibles)
 rbm.h = units.BinaryUnits(rbm) # latent (hiddens)
-rbm.s = units.ContextUnits(rbm) # input (context)
-rbm.vp = units.ContextUnits(rbm) # output history (context)
+rbm.s = units.Units(rbm) # input (context)
+rbm.vp = units.Units(rbm) # output history (context)
 
 initial_A = ...
 initial_B = ...
@@ -18,6 +18,7 @@ initial_Wv = ...
 initial_Wh = ...
 initial_Ws = ...
 
+parameters.FixedBiasParameters(rbm, rbm.v.precision_units) # add precision term to the energy function
 rbm.A = parameters.ProdParameters(rbm, [rbm.vp, rbm.v], initial_A) # weights from past output to current output
 rbm.B = parameters.ProdParameters(rbm, [rbm.vp, rbm.h], initial_B) # weights from past output to hiddens
 rbm.bv = parameters.BiasParameters(rbm, rbm.v, initial_bv) # visible bias

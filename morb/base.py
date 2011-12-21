@@ -9,70 +9,58 @@ def _unique(l): # no idea why this function isn't available - the set() trick on
     return u
 
 ### Base classes: sampling and modeling ###
-
-class ActivationFunction(object):
-    def apply(self, x):
-        raise NotImplementedError("ActivationFunction base class")
     
-class Sampler(object):
-    def apply(self, a):
-        raise NotImplementedError("Sampler base class")
-    
-class Units(object):
-    # container class for a theano variable representing unit values, an ActivationFunction and a Sampler.
-    # a unit could just as well be represented as a tuple (u, ActivationFunction(), Sampler(), [CDSampler()]) but it's probably
-    # nicer to have a container class for this.
-    
-    def __init__(self, rbm, activation_function, sampler, name=None):
+class Units(object):    
+    def __init__(self, rbm, name=None):
         self.rbm = rbm
-        self.activation_function = activation_function
-        self.sampler = sampler
         self.name = name
         self.rbm.add_units(self)
-    
-    def linear_activation(self, vmap):
-        # args and kwargs represent the other Units of the RBM that these units are tied to.
+        
+    def activation(self, vmap):
         terms = [param.activation_term_for(self, vmap) for param in self.rbm.params_affecting(self)]
         # the linear activation is the sum of the activations for each of the parameters.
         return sum(terms)
-        
-    def activation(self, vmap):
-        l = self.linear_activation(vmap)
-        return self.activation_function.apply(l)
             
-    def sample(self, vmap, **kwargs):
-        a = self.activation(vmap)
-        return self.sampler.apply(a, **kwargs)
+    def sample(self, vmap):
+        raise NotImplementedError("Sampling not supported for this Units instance")
+        
+    def mean_field(self, vmap):
+        raise NotImplementedError("Mean field not supported for this Units instance")
         
     def free_energy_term(self, vmap):
         raise NotImplementedError("Free energy calculation not supported for this Units instance")
         
     def __repr__(self):
-        return "<morb:Units '%s' with sampler '%s' and activation function '%s'>" % (self.name, self.sampler.name, self.activation_function.name)
-          
+        return "<morb:Units '%s'>" % self.name
 
-# decorators to create sampler and activation function objects from functions
-def sampler(func):
-    class s(Sampler):
-        def apply(self, a, *args, **kwargs):
-            return func(a, *args, **kwargs)
-    inst = s()
-    inst.name = func.__name__
-    return inst
-    
-def activation_function(func):
-    class f(ActivationFunction): 
-        def apply(self, x, *args, **kwargs):
-            return func(x, *args, **kwargs)
-    inst = f()
-    inst.name = func.__name__
-    return inst
+class ProxyUnits(Units):
+    def __init__(self, rbm, units, func, name=None):
+        super(ProxyUnits, self).__init__(rbm, name)
+        self.units = units # the units this proxy is a function of
+        self.func = func # the function to apply
+        # simple proxy units do not support mean field, the class needs to be overridden for this.
+        
+    def sample(self, vmap):
+        s = self.units.sample(vmap)
+        return self.func(s)
+       
 
 # function to quickly create a basic units class
-def units_type(activation_function, sampler):
-    class U(Units):
-        def __init__(self, rbm, name=None):
-            super(U, self).__init__(rbm, activation_function, sampler, name=name)
+def units_type(sampler, mean_field=None):
+    if mean_field is None:
+        class U(Units):
+            def sample(self, vmap):
+                a = self.activation(vmap)
+                return sampler(a)
+    else:
+        class U(Units):
+            def sample(self, vmap):
+                a = self.activation(vmap)
+                return sampler(a)
+                
+            def mean_field(self, vmap):
+                a = self.activation(vmap)
+                return mean_field(a)
             
     return U
         
@@ -308,6 +296,54 @@ class RBM(object):
         
         # note that this separation breaks down if there are dependencies between the Units instances given.
         return sum(unchanged_terms + affected_terms)
+        
+    def sample(self, units_list, vmap):
+        """
+        This method allows to sample a given set of Units instances at the same time and enforces consistency.
+        say v is a Units instance, and x is a ProxyUnits instance tied to v. Then the following:
+        vs = v.sample(vmap)
+        xs = x.sample(vmap)
+        ...will yield inconsistent samples (i.e. xs != func(vs)). This is undesirable in CD, for example.
+        To remedy this, only the 'basic' units are sampled, and the values of the proxy units are computed.
+        """
+        # This code does not support proxies of proxies.
+        # If this should be supported, this code should be rethought.
+        
+        # split units_list into basic units and proxies.
+        proxy_units, basic_units = [], []
+        for u in units_list:
+            if isinstance(u, ProxyUnits):
+                proxy_units.append(u)
+            else:
+                basic_units.append(u)
+                
+        # for all proxy units, get their basic units. This list may have duplicates.
+        basic_units_of_proxies = [u.units for u in proxy_units]
+        
+        # extend the list of basic units, avoid/remove duplicates.
+        basic_units += [b for basic_units_of_proxies if b not in basic_units]
+                
+        # sample all basic units
+        samples = {}
+        for u in basic_units:
+            samples[u] = u.sample()
+            
+        # compute all proxy units
+        for u in proxy_units:
+            samples[u] = u.func(samples[u.units])
+       
+        # optional: remove all units that weren't in the units_list.
+        for u in samples:
+            if u not in units_list:
+                del samples[u]
+        
+        return samples
+        
+    def mean_field(self, units_list, vmap):
+        # no consistency need be enforced when using mean field, this is just a wrapper
+        # that calls the respective units' mean_field method, for consistency with the
+        # RBM.sample method.
+        return dict((u, u.mean_field(vmap)) for u in units_list)
 
     def __repr__(self):
         units_names = ", ".join(("'%s'" % u.name) for u in self.units_list)
