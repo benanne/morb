@@ -1,6 +1,7 @@
-TODO: ParamUpdaters compute additive updates for the parameters. But what if a more exotic training algorithm is used that does not use additive updates (multiplicative updates are a possibility)? Maybe it's better to let the ParamUpdater perform the addition as well? This is also required to implement ParamUpdaters that constrain values to be negative or positive or something, which is essential for the Gaussian RBM with learnt variance for example.
+TODO: Think about a mechanism to apply constraints to parameters. What are some common techniques? We cannot use ParamUpdaters as those can only constrain UPDATES, not the parameters themselves.
 
 TODO: Finish test_gaussian_learntprecision.py, this will require a paramupdater that constrains updates to be negative.
+- verify whether the proxy units are being sampled at all when necessary, I'm not convinced that this is the case at the moment.
 
 TODO: exponential units
     - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
@@ -11,7 +12,7 @@ TODO: figure out if the rbm.free_energy function is still correct for a 'lineari
 
 TODO: write some proper automated tests
 
-TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.\
+TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.
 - currently, Parameters instances specify their energy gradient. This only works when the energy is linear in the Parameters, because then the energy gradients don't depend on other parameters in that case. 
   Unfortunately, this is not always true, for example with the variance of Gaussian units.
   Another problem with the variance of Gaussians is that the contributions of Parameters to the energy function are no longer additive. Can this be made more general so that Gaussian units with trainable variance become possible?
