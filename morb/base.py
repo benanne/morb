@@ -33,6 +33,7 @@ class Units(object):
     def __repr__(self):
         return "<morb:Units '%s'>" % self.name
 
+
 class ProxyUnits(Units):
     def __init__(self, rbm, units, func, name=None):
         super(ProxyUnits, self).__init__(rbm, name)
@@ -43,26 +44,7 @@ class ProxyUnits(Units):
     def sample(self, vmap):
         s = self.units.sample(vmap)
         return self.func(s)
-       
-
-# function to quickly create a basic units class
-def units_type(sampler, mean_field=None):
-    if mean_field is None:
-        class U(Units):
-            def sample(self, vmap):
-                a = self.activation(vmap)
-                return sampler(a)
-    else:
-        class U(Units):
-            def sample(self, vmap):
-                a = self.activation(vmap)
-                return sampler(a)
-                
-            def mean_field(self, vmap):
-                a = self.activation(vmap)
-                return mean_field(a)
-            
-    return U
+        
         
 class Parameters(object):
     def __init__(self, rbm, units_list, name=None):

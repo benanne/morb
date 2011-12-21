@@ -1,4 +1,4 @@
-TODO: Gaussian units with learnt variance - a nice ProxyUnits exercise.
+TODO: Gaussian units with learnt variance - a nice ProxyUnits exercise. Also build a basic RBM using these units.
 
 TODO: exponential units
     - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
@@ -42,8 +42,7 @@ TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
 
 TODO: gaussian units met learnt variance (gescheiden en samen)
   
-TODO: symmetric beta units
-    - instead of creating separate 'betaparameters', it might be a better idea to create some kind of wrapper for Units instances that functions as 1 - u (or just any transformation). Then a symmetric beta rbm can be implemented with the existing ProdParameters.
+TODO: symmetric beta units (will have two proxies log(u) and log(1-u), and require hiddens with proxies for 1-...)
 
 TODO: ReLU units
 
