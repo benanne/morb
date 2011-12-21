@@ -19,6 +19,8 @@ class BinaryUnits(Units):
         # sum over all but the minibatch dimension
         return T.sum(s, axis=range(1, s.ndim))
 
+
+
 class SigmoidUnits(Units):
     def sample(self, vmap):
         a = self.activation(vmap)
@@ -27,6 +29,8 @@ class SigmoidUnits(Units):
     def mean_field(self, vmap):
         a = self.activation(vmap)
         return activation_functions.sigmoid(a)
+  
+  
         
 class GaussianPrecisionProxyUnits(ProxyUnits):
     def __init__(self, rbm, units, name=None):
@@ -52,18 +56,16 @@ class GaussianUnits(Units):
         return a
         
 
-# TODO: learntprecision gaussian units afwerken
-"""
+
 class LearntPrecisionGaussianProxyUnits(ProxyUnits):
     def __init__(self, rbm, units, name=None):
-        func = lambda x: x**2 / 2.0
-        super(GaussianPrecisionProxyUnits, self).__init__(rbm, units, func, name)
+        func = lambda x: x**2
+        super(LearntPrecisionGaussianProxyUnits, self).__init__(rbm, units, func, name)
         
     def mean_field(self, vmap):
         raise NotImplementedError("No mean field for now, sorry... still have to implement this.")
         # TODO: implement E[x**2] for x gaussian
              
-        
 class LearntPrecisionGaussianUnits(Units):
     def __init__(self, rbm, name=None):
         super(LearntPrecisionGaussianUnits, self).__init__(rbm, name)
@@ -73,12 +75,14 @@ class LearntPrecisionGaussianUnits(Units):
     def sample(self, vmap):
         a1 = self.activation(vmap)
         a2 = self.precision_units.activation(vmap)
-        return samplers.gaussian(a1, a2)
+        return samplers.gaussian(a1/(2*a2), 1/(2*a2))
         
     def mean_field(self, vmap):
-        a = self.activation(vmap)
-        return samplers.gaussian_fixed_mean(a)
-"""    
+        a1 = self.activation(vmap)
+        a2 = self.precision_units.activation(vmap)
+        return a1/(2*a2)
+  
+
         
 # TODO later: gaussian units with custom fixed variance (maybe per-unit). This probably requires two proxies.
 
@@ -88,6 +92,8 @@ class SoftmaxUnits(Units):
         a = self.activation(vmap)
         p = activation_functions.softmax(a)
         return samplers.multinomial(p)
+
+
 
 class SoftmaxWithZeroUnits(Units):
     """
@@ -99,6 +105,7 @@ class SoftmaxWithZeroUnits(Units):
         s0 = samplers.multinomial(p0)
         s = s0[:, :, :-1] # chop off the last state (zero state)
         return s
+
 
 
 class TruncatedExponentialUnits(Units):

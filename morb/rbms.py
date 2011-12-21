@@ -101,3 +101,33 @@ class GaussianBinaryRBM(RBM): # Gaussian visible units
         return np.zeros(self.n_hidden, dtype = theano.config.floatX)
 
 
+class LearntPrecisionGaussianBinaryRBM(RBM):
+    """
+    Wp and bvp should be constrained to be negative.
+    """
+    def __init__(self, n_visible, n_hidden):
+        super(LearntPrecisionGaussianBinaryRBM, self).__init__()
+        # data shape
+        self.n_visible = n_visible
+        self.n_hidden = n_hidden
+        # units
+        self.v = units.LearntPrecisionGaussianUnits(self, name='v') # visibles
+        self.h = units.BinaryUnits(self, name='h') # hiddens
+        # parameters
+        self.Wm = parameters.ProdParameters(self, [self.v, self.h], theano.shared(value = self._initial_W(), name='Wm'), name='Wm') # weights
+        self.Wp = parameters.ProdParameters(self, [self.v.precision_units, self.h], theano.shared(value = self._initial_W(), name='Wp'), name='Wp') # weights
+        self.bv = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bias(self.n_visible), name='bv'), name='bv') # visible bias
+        self.bvp = parameters.BiasParameters(self, self.v.precision_units, theano.shared(value = self._initial_bias(self.n_visible), name='bvp'), name='bvp') # precision bias
+        self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bias(self.n_hidden), name='bh'), name='bh') # hidden bias
+        
+    def _initial_W(self):
+        return np.asarray( np.random.uniform(
+                   low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
+                   high  =  4*np.sqrt(6./(self.n_hidden+self.n_visible)),
+                   size  =  (self.n_visible, self.n_hidden)),
+                   dtype =  theano.config.floatX)
+        
+    def _initial_bias(self, n):
+        return np.zeros(n, dtype = theano.config.floatX)
+
+
