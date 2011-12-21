@@ -1,7 +1,7 @@
-![Morb logo](http://github.com/benanne/morb/raw/master/morblogo.png)
-
 Morb: a modular RBM implementation in Theano
 ============================================
+
+![Morb logo](http://github.com/benanne/morb/raw/master/morblogo.png)
 
 Introduction
 ------------
