@@ -1,29 +1,26 @@
-TODO: update README file
+TODO: Gaussian units with learnt variance - a nice ProxyUnits exercise.
+
+TODO: exponential units
+    - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
+    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
+    - doesn't seem to converge on the simple example, maybe try mnist? non-mf version gives NaN after a while. Something is probably wrong.
 
 TODO: figure out if the rbm.free_energy function is still correct for a 'linearised' RBM
 
 TODO: write some proper automated tests
 
-TODO: gaussian units with learnt variance? The 'activation' has two components here. Activation is the sum of the activation terms for each of the parameters (activation_term_for). Is this compatible?
-  - possible interface: each unit type advertises the "type" of activation(s) it needs. This assumes that there are only a couple of types. OR maybe it's possible to derive the necessary activations from the energy function....
-  So far we've only used 'linear activations', but Gaussian units with learnt variance can't do anything with this. Find out what the 'general form' of the activations of the gaussian RBM is.
-
 TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.\
 - currently, Parameters instances specify their energy gradient. This only works when the energy is linear in the Parameters, because then the energy gradients don't depend on other parameters in that case. 
   Unfortunately, this is not always true, for example with the variance of Gaussian units.
   Another problem with the variance of Gaussians is that the contributions of Parameters to the energy function are no longer additive. Can this be made more general so that Gaussian units with trainable variance become possible?
-  Introduce a new Parameters supertype that transforms units. This can be used for the Gaussian stuff (v = v'/sigma) and for the linear combination stuff (v = Rx)
+  Introduce ProxyUnits with trainable parameters. This can be used for the Gaussian stuff (v = v'/sigma) and for the linear combination stuff (v = Rx).
   
 TODO: for the linear R parameters in the FCRBM model, we could apply the chain rule as follows:
 dE/dR = dE/dv*dv/dR. Since v = Rx, dv/dR is easy. dE/dv is also fairly easy. One could suspect that it is identical to act_v, the activation of v, but I'm not convinced this is the case. It's true when everything is linear, but what when there's gaussian units, for example?
 - Calculate dE/dv and act_v for a gaussian-binary RBM and compare.
 - Think about how this could be incorporated.
-- this is probably a good time to start using Theano's grad functionality... if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. But it would be kinda nice if we didn't rely 100% on this functionality; it should be possible to override this and provide the gradient manually. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
 
-TODO: truncated exponential units, exponential units
-    - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
-    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
-    - doesn't seem to converge on the simple example, maybe try mnist? non-mf version gives NaN after a while. Something is probably wrong.
+- make Parameters.gradient() use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
     
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN

@@ -8,7 +8,7 @@ Morb is a toolbox for building and training Restricted Boltzmann Machine models 
 
 The elementary parts in question are different types of **units**, which can be connected with different types of **parameters**. A schematic diagram of the architecture can be viewed below.
 
-A unit type is composed of a **sampler** and an **activation function**. For example, binary units are composed of a *Bernoulli* distribution sampler and a *sigmoid* activation function. Different activation functions and samplers are available, and new ones can be defined. They can be combined easily into new unit types.
+A unit type defines the distribution of that unit. For example, binary units are *Bernoulli* distributed. Several unit types are available, and new ones can be defined easily.
 
 The different types of parameters form the trainable part of the model. These include *biases*, *regular weights*, *convolutional weights* and *third order weights*, amongst others. New parameter types can be defined by specifying the terms they contribute to the activations of each of the units they tie, the term they contribute to the model energy function, and the gradient of the energy function with respect to the parameters.
 
