@@ -1,10 +1,8 @@
-TODO:
-- modify all examples
-  * use 'Units' base class instead of 'ContextUnits'
- 
+TODO: update README file
+
 TODO: figure out if the rbm.free_energy function is still correct for a 'linearised' RBM
 
-TODO: update architecture drawing and README file 
+TODO: write some proper automated tests
 
 TODO: gaussian units with learnt variance? The 'activation' has two components here. Activation is the sum of the activation terms for each of the parameters (activation_term_for). Is this compatible?
   - possible interface: each unit type advertises the "type" of activation(s) it needs. This assumes that there are only a couple of types. OR maybe it's possible to derive the necessary activations from the energy function....
@@ -104,6 +102,7 @@ https://github.com/deeplearningais/CUV/tree/master/examples/rbm
 
 TODO: when parameters are being tied, it is interesting to be able to specify learning rates for each of the Parameters components individually, rather than for the ParamUpdater as a whole.
 
+TODO: might want to clean up cd_stats with regards to the mean field business. that's handled a bit untuitively at the moment.
 
 
 

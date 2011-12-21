@@ -28,36 +28,7 @@ data = generate_data(200)
 n_visible = data.shape[1]
 n_hidden = 100
 
-class CustomGaussianBinaryRBM(morb.base.RBM):
-    def __init__(self, n_visible, n_hidden):
-        super(CustomGaussianBinaryRBM, self).__init__()
-        # data shape
-        self.n_visible = n_visible
-        self.n_hidden = n_hidden
-        # units
-        CustomGaussianUnits = units.gaussian_units_type(0.5, mean_field=False)
-        self.v = CustomGaussianUnits(self, name='v') # visibles
-        self.h = units.BinaryUnits(self, name='h') # hiddens
-        # parameters
-        self.W = parameters.ProdParameters(self, [self.v, self.h], theano.shared(value = self._initial_W(), name='W'), name='W') # weights
-        self.bv = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bv(), name='bv'), name='bv') # visible bias
-        self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bh(), name='bh'), name='bh') # hidden bias
-        
-    def _initial_W(self):
-        return np.asarray( np.random.uniform(
-                   low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
-                   high  =  4*np.sqrt(6./(self.n_hidden+self.n_visible)),
-                   size  =  (self.n_visible, self.n_hidden)),
-                   dtype =  theano.config.floatX)
-        
-    def _initial_bv(self):
-        return np.zeros(self.n_visible, dtype = theano.config.floatX)
-        
-    def _initial_bh(self):
-        return np.zeros(self.n_hidden, dtype = theano.config.floatX)
-
-
-rbm = CustomGaussianBinaryRBM(n_visible, n_hidden)
+rbm = rbms.GaussianBinaryRBM(n_visible, n_hidden)
 
 initial_vmap = { rbm.v: T.matrix('v') }
 
@@ -67,7 +38,7 @@ s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h
 
 # We create a ParamUpdater for each Parameters instance.
 umap = {}
-for params in rbm.params_list:
+for params in [rbm.W, rbm.bv, rbm.bh]:
     pu =  0.001 * param_updaters.CDParamUpdater(params, s) # the learning rate is 0.001
     umap[params] = pu
  

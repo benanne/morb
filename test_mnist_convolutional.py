@@ -47,9 +47,9 @@ test_set_x = test_set_x.reshape((test_set_x.shape[0], 1, 28, 28))
 
 visible_maps = 1
 hidden_maps = 50 # 100 # 50
-filter_height = 8 # 28 # 8
-filter_width = 8 # 28 # 8
-mb_size = 1 # 10
+filter_height = 28 # 8
+filter_width = 28 # 8
+mb_size = 10 # 1
 
 
 

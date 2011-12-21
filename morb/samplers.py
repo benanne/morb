@@ -1,5 +1,3 @@
-from morb.base import sampler, Sampler
-
 import theano
 import theano.tensor as T
 
@@ -44,9 +42,9 @@ def bernoulli_mean(a):
 
 def gaussian_fixed(a, std=1.0):
     # the mean parameter of a gaussian with fixed variance is the activation.
-    return theano_rng.normal(size=a.shape, avg=a, std=self.std, dtype=theano.config.floatX)
+    return theano_rng.normal(size=a.shape, avg=a, std=std, dtype=theano.config.floatX)
 
-def gaussian_fixed_mean(a)
+def gaussian_fixed_mean(a):
     return a
         
 
@@ -58,8 +56,8 @@ def multinomial(a):
     # r 0 = minibatches * units
     # r 1 = states
     # this is the expected input for theano.nnet.softmax and theano_rng.multinomial
-    p = theano.nnet.softmax(r)
-    s = self.theano_rng.multinomial(n=1, pvals=p, dtype=theano.config.floatX)    
+    p = T.nnet.softmax(r)
+    s = theano_rng.multinomial(n=1, pvals=p, dtype=theano.config.floatX)    
     return s.reshape(a.shape) # reshape back to original shape
     
 
@@ -68,7 +66,7 @@ def multinomial_with_zero(a):
     r = a.reshape((a.shape[0]*a.shape[1], a.shape[2]))   
     r0 = T.concatenate([r, T.zeros_like(r)[:, 0:1]], axis=1) # add row of zeros for zero energy state
     p0 = theano.nnet.softmax(r0)
-    s0 = self.theano_rng.multinomial(n=1, pvals=p0, dtype=theano.config.floatX)
+    s0 = theano_rng.multinomial(n=1, pvals=p0, dtype=theano.config.floatX)
     s = s0[:, :-1] # cut off zero state column
     return s.reshape(a.shape) # reshape to original shape
     # TODO: test this sampler
@@ -76,11 +74,11 @@ def multinomial_with_zero(a):
 
 def truncated_exponential(a, maximum=1.0):
     uniform_samples = theano_rng.uniform(size=a.shape, dtype=theano.config.floatX)
-    return (-1 / a) * T.log(1 - uniform_samples*(1 - T.exp(-a * self.maximum)))
+    return (-1 / a) * T.log(1 - uniform_samples*(1 - T.exp(-a * maximum)))
 
 
 def truncated_exponential_mean(a, maximum=1.0):
-    return (1 / a) + (self.maximum / (1 - T.exp(self.maximum*a)))   
+    return (1 / a) + (maximum / (1 - T.exp(maximum*a)))   
 
 
 

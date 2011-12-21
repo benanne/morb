@@ -59,7 +59,7 @@ class BinaryBinaryCRBM(BinaryBinaryRBM):
         # data shape
         self.n_context = n_context
         # units
-        self.x = units.ContextUnits(self, name='x') # context
+        self.x = units.Units(self, name='x') # context
         # parameters
         self.A = parameters.ProdParameters(self, [self.x, self.v], theano.shared(value = self._initial_A(), name='A'), name='A') # context-to-visible weights
         self.B = parameters.ProdParameters(self, [self.x, self.h], theano.shared(value = self._initial_B(), name='B'), name='B') # context-to-hidden weights

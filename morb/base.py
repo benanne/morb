@@ -321,12 +321,12 @@ class RBM(object):
         basic_units_of_proxies = [u.units for u in proxy_units]
         
         # extend the list of basic units, avoid/remove duplicates.
-        basic_units += [b for basic_units_of_proxies if b not in basic_units]
+        basic_units += [b for b in basic_units_of_proxies if b not in basic_units]
                 
         # sample all basic units
         samples = {}
         for u in basic_units:
-            samples[u] = u.sample()
+            samples[u] = u.sample(vmap)
             
         # compute all proxy units
         for u in proxy_units:

@@ -12,8 +12,11 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
     context_vmap = dict((u, v0_vmap[u]) for u in context_units)
 
     h0_activation_vmap = dict((h, h.activation(v0_vmap)) for h in hidden_units)
-    h0_sample_cd_vmap = rbm.mean_field(hidden_units, v0_vmap) # with mean field
     h0_sample_vmap = rbm.sample(hidden_units, v0_vmap) # without mean field (rbm enforces consistency)
+    if mean_field_for_stats:
+        h0_sample_cd_vmap = rbm.mean_field(hidden_units, v0_vmap) # with mean field
+    else:
+        h0_sample_cd_vmap = h0_sample_vmap
     
     # add context
     h0_activation_vmap.update(context_vmap)
@@ -32,8 +35,11 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
         v1_in_vmap.update(context_vmap)
         
         v1_activation_vmap = dict((v, v.activation(v1_in_vmap)) for v in visible_units)
-        v1_sample_cd_vmap = rbm.mean_field(visible_units, v1_in_vmap) # with mf
         v1_sample_vmap = rbm.sample(visible_units, v1_in_vmap) # without mf
+        if mean_field_for_stats or mean_field_for_visibles:
+            v1_sample_cd_vmap = rbm.mean_field(visible_units, v1_in_vmap) # with mf
+        else:
+            v1_sample_cd_vmap = v1_sample_vmap
         
         if mean_field_for_visibles:
             h1_in_vmap = v1_sample_cd_vmap.copy()
@@ -44,8 +50,12 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
         h1_in_vmap.update(context_vmap)
 
         h1_activation_vmap = dict((h, h.activation(h1_in_vmap)) for h in hidden_units)
-        h1_sample_cd_vmap = rbm.mean_field(hidden_units, h1_in_vmap) # with mf
-        h1_sample_vmap = rbm.mean_field(hidden_units, h1_in_vmap) # without mf
+        h1_sample_vmap = rbm.sample(hidden_units, h1_in_vmap) # without mf
+        if mean_field_for_stats:
+            h1_sample_cd_vmap = rbm.mean_field(hidden_units, h1_in_vmap) # with mf
+        else:
+            h1_sample_cd_vmap = h1_sample_vmap
+
             
         # get the v1 values in a fixed order
         v1_activation_values = [v1_activation_vmap[u] for u in visible_units]

@@ -1,4 +1,4 @@
-from morb.base import units_type, Units
+from morb.base import units_type, Units, ProxyUnits
 from morb import samplers
 import theano.tensor as T
 

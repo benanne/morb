@@ -9,9 +9,9 @@ def reconstruction_mse(stats, u):
 
 def reconstruction_crossentropy(stats, u):
     data = stats['data'][u]
-    reconstruction_linear = stats['model_linear_activation'][u]
-    return T.mean(T.sum(data*T.log(T.nnet.sigmoid(reconstruction_linear)) +
-                  (1 - data)*T.log(1 - T.nnet.sigmoid(reconstruction_linear)), axis=1))                          
+    reconstruction_activation = stats['model_activation'][u]
+    return T.mean(T.sum(data*T.log(T.nnet.sigmoid(reconstruction_activation)) +
+                  (1 - data)*T.log(1 - T.nnet.sigmoid(reconstruction_activation)), axis=1))                          
     # without optimisation:
     # return T.mean(T.sum(data*T.log(reconstruction) + (1 - data)*T.log(reconstruction), axis=1))
     # see http://deeplearning.net/tutorial/rbm.html, below the gibbs_hvh and gibbs_vhv code for an explanation.
