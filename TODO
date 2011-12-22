@@ -1,4 +1,5 @@
-TODO: Think about a mechanism to apply constraints to parameters. What are some common techniques? We cannot use ParamUpdaters as those can only constrain UPDATES, not the parameters themselves.
+TODO: Think about a mechanism to apply constraints to parameters.
+  modify ParamUpdaters to return updated parameters instead of additive updates. Think about how we can deal with tied parameters in that case... also, it might be desirable to have separate updaters for each VARIABLE, i.e. not for each Parameters object, so that different learning rates and regularisation can be used.
 
 TODO: Finish test_gaussian_learntprecision.py, this will require a paramupdater that constrains updates to be negative.
 - verify whether the proxy units are being sampled at all when necessary, I'm not convinced that this is the case at the moment.
