@@ -1,11 +1,12 @@
 TODO: Think about a mechanism to apply constraints to parameters.
   modify ParamUpdaters to return updated parameters instead of additive updates. Think about how we can deal with tied parameters in that case... also, it might be desirable to have separate updaters for each VARIABLE, i.e. not for each Parameters object, so that different learning rates and regularisation can be used.
+  * rename 'ParamUpdater' to 'Updater', and tie it to a Theano shared variable, rather than to a Parameters instance.
 
-TODO: Finish test_gaussian_learntprecision.py, this will require a paramupdater that constrains updates to be negative.
+TODO: Finish test_gaussian_learntprecision.py, this will require an updater that constrains updates to be negative.
 - verify whether the proxy units are being sampled at all when necessary, I'm not convinced that this is the case at the moment.
 
 TODO: exponential units
-    - with non-truncated exponential units, lambda has to be positive. This implies constraints on the weights. How can we deal with constrained weights? This might have to be dealt with using a ParamUpdater.
+    - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
     - doesn't seem to converge on the simple example, maybe try mnist? non-mf version gives NaN after a while. Something is probably wrong.
 
