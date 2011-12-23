@@ -1,7 +1,4 @@
-TODO: ParamUpdaters have some flaws that need to be remedied by rethinking the 'Updater' mechanism
-  - only additive updates are possible at the moment. Although this is the most common usecase, multiplicative update rules also exist. ParamUpdaters should therefore no longer return additive updates, but rather the new parameter values. It should be possible to just write (Parameters() + 0.001 * ParamUpdater()) and then a ParamUpdater is returned (using ParamUpdater.__radd__ and .__rsub__)
-
-  * update all examples
+TODO: update all test files so they use the new updater mechanism
 
 TODO: implement Updaters that enforce positivity/negativity
   

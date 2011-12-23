@@ -106,7 +106,7 @@ class Updater(object):
         
     def __add__(self, p2):
         p2 = self._to_updater(p2)
-        return SumUpdater([self, eu])
+        return SumUpdater([self, p2])
         
     def __sub__(self, p2):
         p2 = self._to_updater(p2)
@@ -160,7 +160,7 @@ class ScaleUpdater(Updater):
         
 # this extension has to be here because it's used in the base class
 class SumUpdater(Updater):
-    def __init__(self):
+    def __init__(self, updaters):
         # assert that all updaters affect the same variable, gather stats collectors
         self.updaters = updaters
         stats_list = []
@@ -203,9 +203,11 @@ class Trainer(object):
         
         if train:
             variable_updates = {}
-            for v, pu in self.umap.items()
+            for v, pu in self.umap.items():
                 theano_updates.update(pu.get_theano_updates()) # Updater state updates
                 theano_updates[v] = pu.get_update() # variable update
+                
+        return theano_updates
                 
 
 ### Base classes: RBM container class ###
@@ -267,7 +269,7 @@ class RBM(object):
         """
         sums the gradient contributions of all Parameters instances for the given variable.
         """
-        return sum(p.energy_gradient_for(variable, vmap) for p in params_list if variable in p.variables)
+        return sum(p.energy_gradient_for(variable, vmap) for p in self.params_list if variable in p.variables)
         
     def energy(self, vmap):
         terms = [params.energy_term(vmap) for params in self.params_list]
