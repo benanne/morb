@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats, param_updaters, trainers, monitors, units, parameters
+from morb import rbms, stats, updaters, trainers, monitors, units, parameters
 
 import theano
 import theano.tensor as T
@@ -36,11 +36,11 @@ initial_vmap = { rbm.v: T.matrix('v') }
 # the CDParamUpdater. This requires symbolic CD-1 statistics:
 s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
 
-# We create a ParamUpdater for each Parameters instance.
+# We create an updater for each parameter variable
 umap = {}
-for params in [rbm.W, rbm.bv, rbm.bh]:
-    pu =  0.001 * param_updaters.CDParamUpdater(params, s) # the learning rate is 0.001
-    umap[params] = pu
+for var in rbm.variables:
+    pu =  var + 0.001 * updaters.CDUpdater(rbm, var, s) # the learning rate is 0.001
+    umap[var] = pu
  
 # training
 t = trainers.MinibatchTrainer(rbm, umap)

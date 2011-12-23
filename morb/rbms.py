@@ -103,7 +103,7 @@ class GaussianBinaryRBM(RBM): # Gaussian visible units
 
 class LearntPrecisionGaussianBinaryRBM(RBM):
     """
-    Wp and bvp should be constrained to be negative.
+    Important: Wp and bvp should be constrained to be negative.
     """
     def __init__(self, n_visible, n_hidden):
         super(LearntPrecisionGaussianBinaryRBM, self).__init__()

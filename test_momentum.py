@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats, param_updaters, trainers, monitors
+from morb import rbms, stats, updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -35,11 +35,11 @@ s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h
 
 umap = {}
 
-for params, shape in zip([rbm.W, rbm.bv, rbm.bh], [[(rbm.n_visible, rbm.n_hidden)], [(rbm.n_visible,)], [(rbm.n_hidden,)]]):
+for var, shape in zip([rbm.W.W, rbm.bv.b, rbm.bh.b], [(rbm.n_visible, rbm.n_hidden), (rbm.n_visible,), (rbm.n_hidden,)]):
     # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
-    pu = param_updaters.CDParamUpdater(params, s)
-    pu =  0.0001 * param_updaters.MomentumParamUpdater(pu, 0.9, shape)
-    umap[params] = pu
+    pu = updaters.CDUpdater(rbm, var, s)
+    pu = var + 0.0001 * updaters.MomentumUpdater(pu, 0.9, shape)
+    umap[var] = pu
     
 
  

@@ -89,7 +89,6 @@ s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h
 
 umap = {}
 for var in rbm.variables:
-    # pu =  0.001 * (param_updaters.CDParamUpdater(params, s) + 0.02 * param_updaters.DecayParamUpdater(params))
     pu =  var + 0.001 * updaters.CDUpdater(rbm, var, s)
     umap[var] = pu
 

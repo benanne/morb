@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats, param_updaters, trainers, monitors
+from morb import rbms, stats, updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -58,11 +58,11 @@ sparsity_cost = 0.5
 
 umap = {}
 
-umap[rbm.W] = eta * param_updaters.CDParamUpdater(rbm.W, s) \
-            + eta * sparsity_cost * param_updaters.SparsityParamUpdater(rbm.W, sparsity_targets, s)
-umap[rbm.bh] = eta * param_updaters.CDParamUpdater(rbm.bh, s) \
-             + eta * sparsity_cost * param_updaters.SparsityParamUpdater(rbm.bh, sparsity_targets, s)
-umap[rbm.bv] = eta * param_updaters.CDParamUpdater(rbm.bv, s)
+umap[rbm.W.W] = rbm.W.W + eta * updaters.CDUpdater(rbm, rbm.W.W, s) \
+            + eta * sparsity_cost * updaters.SparsityUpdater(rbm, rbm.W.W, sparsity_targets, s)
+umap[rbm.bh.b] = rbm.bh.b + eta * updaters.CDUpdater(rbm, rbm.bh.b, s) \
+             + eta * sparsity_cost * updaters.SparsityUpdater(rbm, rbm.bh.b, sparsity_targets, s)
+umap[rbm.bv.b] = rbm.bv.b + eta * updaters.CDUpdater(rbm, rbm.bv.b, s)
 
 
 

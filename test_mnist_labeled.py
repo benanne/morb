@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats, param_updaters, trainers, monitors, units, parameters
+from morb import rbms, stats, updaters, trainers, monitors, units, parameters
 
 import theano
 import theano.tensor as T
@@ -79,10 +79,9 @@ s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h
 # s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v, rbm.s], hidden_units=[rbm.h], k=1, mean_field_for_visibles=False, mean_field_for_stats=False)
 
 umap = {}
-for params in rbm.params_list:
-    # pu =  0.001 * (param_updaters.CDParamUpdater(params, s) + 0.02 * param_updaters.DecayParamUpdater(params))
-    pu =  0.001 * param_updaters.CDParamUpdater(params, s)
-    umap[params] = pu
+for var in rbm.variables:
+    pu = var + 0.001 * updaters.CDUpdater(rbm, var, s)
+    umap[var] = pu
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)

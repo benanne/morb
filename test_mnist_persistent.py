@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats, param_updaters, trainers, monitors
+from morb import rbms, stats, updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -57,9 +57,9 @@ print ">> Constructing contrastive divergence updaters..."
 s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k, persistent_vmap=persistent_vmap)
 
 umap = {}
-for params in rbm.params_list:
-    pu =  (learning_rate / float(mb_size)) * param_updaters.CDParamUpdater(params, s)
-    umap[params] = pu
+for var in rbm.variables:
+    pu = var + (learning_rate / float(mb_size)) * updaters.CDUpdater(rbm, var, s)
+    umap[var] = pu
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)

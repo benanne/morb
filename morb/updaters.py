@@ -23,7 +23,7 @@ class MomentumUpdater(Updater):
         self.variable_shape = variable_shape
         
         name = pu.variable.name + "_momentum"
-        self.previous_update = theano.shared(value = np.zeros(shape, dtype=theano.config.floatX), name=name)
+        self.previous_update = theano.shared(value = np.zeros(self.variable_shape, dtype=theano.config.floatX), name=name)
                     
     def get_update(self):
         update = self.pu.get_update() + self.momentum * self.previous_update

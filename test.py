@@ -31,10 +31,10 @@ rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # We use single-step contrastive divergence (CD-1) to train the RBM. For this, we can use
-# the CDParamUpdater. This requires symbolic CD-1 statistics:
+# the CDUpdater. This requires symbolic CD-1 statistics:
 s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
 
-# We create a ParamUpdater for each Parameters instance.
+# We create an updater for each parameter variable
 umap = {}
 for var in rbm.variables:
     pu = var + 0.001 * updaters.CDUpdater(rbm, var, s) # the learning rate is 0.001
