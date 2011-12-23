@@ -6,10 +6,17 @@ import theano
 
 
 def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, mean_field_for_visibles=True, mean_field_for_stats=True, persistent_vmap=None):
-    # with 'mean_field_for_visibles', we can control whether hiddens are sampled based on visibles samples or visible means in the CD iterations.   
+    # with 'mean_field_for_visibles', we can control whether hiddens are sampled based on visibles samples or visible means in the CD iterations.       
     
     # first we need to get the context, because we will have to merge it into the other vmaps.
     context_vmap = dict((u, v0_vmap[u]) for u in context_units)
+    
+    # now, complete the vmaps and units lists (add missing proxy units)
+    v0_vmap = rbm.complete_vmap(v0_vmap)
+    context_vmap = rbm.complete_vmap(context_vmap)
+    visible_units = rbm.complete_units_list(visible_units)
+    hidden_units = rbm.complete_units_list(hidden_units)
+    context_units = rbm.complete_units_list(context_units)
 
     h0_activation_vmap = dict((h, h.activation(v0_vmap)) for h in hidden_units)
     h0_sample_vmap = rbm.sample(hidden_units, v0_vmap) # without mean field (rbm enforces consistency)

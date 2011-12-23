@@ -24,11 +24,16 @@ class MomentumUpdater(Updater):
         
         name = pu.variable.name + "_momentum"
         self.previous_update = theano.shared(value = np.zeros(self.variable_shape, dtype=theano.config.floatX), name=name)
+        
+        # Update calculation has to happen in __init__, because else if get_theano_updates
+        # is called before get_update, the state update will not be included in the dict.
+        # This is a bit nasty, and it probably applies for all updaters with state.
+        # maybe this is a design flaw?
+        self.update = self.pu.get_update() + self.momentum * self.previous_update
+        self.theano_updates = { self.previous_update: self.update }
                     
     def get_update(self):
-        update = self.pu.get_update() + self.momentum * self.previous_update
-        self.theano_updates = { self.previous_update: update }
-        return update
+        return self.update
         
     def get_theano_updates(self):
         u = self.theano_updates.copy() # the MomentumUpdater's own state updates
@@ -68,5 +73,31 @@ class SparsityUpdater(Updater):
         
         return - self.rbm.energy_gradient(self.variable, vmap) # minus sign is important!
         
-        
 
+class BoundUpdater(Updater):
+    """
+    Forces the parameter to be larger than (default) or smaller than a given value.
+    When type='lower', the bound is a lower bound. This is the default behaviour.
+    When type='upper', the bound is an upper bound.
+    The value of the bound is 0 by default, so if no extra arguments are supplied,
+    this updater will force the parameter values to be positive.
+    The bound is always inclusive.
+    """
+    def __init__(self, pu, bound=0, type='lower'):  
+        super(BoundUpdater, self).__init__(pu.variable, pu.stats_list)
+        self.pu = pu
+        self.bound = bound
+        self.type = type
+                    
+    def get_update(self):
+        update = self.pu.get_update()
+        if self.type == 'lower':
+            condition = update >= self.bound
+        else: # type is 'upper'
+            condition = update <= self.bound
+        return T.switch(condition, update, T.ones_like(update) * self.bound)
+      
+    def get_theano_updates(self):
+        # The BoundUpdater has no state, so the only updates that should be returned
+        # are those of the encapsulated updater.
+        return self.pu.get_theano_updates()

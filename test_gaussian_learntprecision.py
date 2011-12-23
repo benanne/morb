@@ -34,14 +34,21 @@ initial_vmap = { rbm.v: T.matrix('v') }
 
 # We use single-step contrastive divergence (CD-1) to train the RBM. For this, we can use
 # the CDParamUpdater. This requires symbolic CD-1 statistics:
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1, mean_field_for_visibles=False, mean_field_for_stats=False)
 
-# We create an updater for each parameter variable
+# We create an updater for each parameter variable.
+# IMPORTANT: the precision parameters must be constrained to be negative.
+variables = [rbm.Wm.W, rbm.bvm.b, rbm.bh.b, rbm.Wp.W, rbm.bvp.b]
+precision_variables = [rbm.Wp.W, rbm.bvp.b]
+
 umap = {}
-for var in rbm.variables:
+for var in variables:
     pu = var + 0.001 * updaters.CDUpdater(rbm, var, s) # the learning rate is 0.001
-    # TODO: adapt this so the precision parameters are forced to be negative.
+    if var in precision_variables:
+        pu = updaters.BoundUpdater(pu, bound=0, type='upper')
     umap[var] = pu
+    
+
  
 # training
 t = trainers.MinibatchTrainer(rbm, umap)

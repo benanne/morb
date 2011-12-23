@@ -1,14 +1,11 @@
-TODO: implement Updaters that enforce positivity/negativity
+TODO: change the gaussian RBM with learnt precision example to use a dataset on which this model makes sense, and investigate if there are any bugs in it.
   
-TODO: Finish test_gaussian_learntprecision.py, this will require an updater that constrains updates to be negative.
-- verify whether the proxy units are being sampled at all when necessary, I'm not convinced that this is the case at the moment.
-
 TODO: exponential units
     - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
     - doesn't seem to converge on the simple example, maybe try mnist? non-mf version gives NaN after a while. Something is probably wrong.
 
-TODO: figure out if the rbm.free_energy function is still correct for a 'linearised' RBM
+TODO: figure out if the rbm.free_energy function is still correct for a 'linearised' RBM (it should be)
 
 TODO: write some proper automated tests
 
@@ -23,9 +20,9 @@ dE/dR = dE/dv*dv/dR. Since v = Rx, dv/dR is easy. dE/dv is also fairly easy. One
 - Calculate dE/dv and act_v for a gaussian-binary RBM and compare.
 - Think about how this could be incorporated.
 
-- make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
+TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
 
-TODO: consider implementing 'factors' as standalone elements. Using the 'message passing' interpretation this might even be easy. And it would make implementing factored Nth order RBMs a breeze (although I'm not sure if that's useful).
+TODO: consider implementing 'factors' as standalone elements. Using the 'message passing' interpretation this might even be easy. And it would make implementing factored Nth order RBMs a breeze (although I'm not sure if that's useful), and allow for 'convolutional factored' models etc.
     
 TODO: wat glue code om RBMs te stacken in DBNs.
     - samplen van een DBN

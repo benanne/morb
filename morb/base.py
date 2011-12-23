@@ -14,6 +14,7 @@ class Units(object):
     def __init__(self, rbm, name=None):
         self.rbm = rbm
         self.name = name
+        self.proxy_units = [] # list of units that are proxies of this Units instance
         self.rbm.add_units(self)
         
     def activation(self, vmap):
@@ -297,6 +298,50 @@ class RBM(object):
         # note that this separation breaks down if there are dependencies between the Units instances given.
         return sum(unchanged_terms + affected_terms)
         
+    def complete_units_list_split(self, units_list):
+        """
+        Returns two lists: one with basic units and one with proxy units.
+        For all basic units in the units_list, all proxies are added as well.
+        For all proxy units in the units_list, all missing basic units are added
+        as well.
+        """
+        proxy_units, basic_units = [], []        
+        for u in units_list:
+            if isinstance(u, ProxyUnits):
+                if u not in proxy_units:
+                    proxy_units.append(u)
+                if u.units not in basic_units:
+                    basic_units.append(u.units)
+            else:
+                if u not in basic_units:
+                    basic_units.append(u)
+                for p in u.proxy_units:
+                    if p not in proxy_units:
+                        proxy_units.append(p)
+                        
+        return basic_units, proxy_units
+        
+    def complete_units_list(self, units_list):
+        b, pr = self.complete_units_list_split(units_list)
+        return b + pr
+        
+    def complete_vmap(self, vmap):
+        """
+        Takes in a vmap and computes any missing proxy units values.
+        """
+        vmap = vmap.copy() # don't modify the original dict
+        units_list = vmap.keys()
+        missing_units_list = []
+        for u in units_list:
+            for p in u.proxy_units:
+                if p not in units_list:
+                    missing_units_list.append(p)
+                    
+        for p in missing_units_list:
+            vmap[p] = p.func(vmap[p.units])
+            
+        return vmap
+        
     def sample(self, units_list, vmap):
         """
         This method allows to sample a given set of Units instances at the same time and enforces consistency.
@@ -305,23 +350,18 @@ class RBM(object):
         xs = x.sample(vmap)
         ...will yield inconsistent samples (i.e. xs != func(vs)). This is undesirable in CD, for example.
         To remedy this, only the 'basic' units are sampled, and the values of the proxy units are computed.
+        All proxies are always included in the returned vmap.
         """
         # This code does not support proxies of proxies.
         # If this should be supported, this code should be rethought.
         
-        # split units_list into basic units and proxies.
-        proxy_units, basic_units = [], []
-        for u in units_list:
-            if isinstance(u, ProxyUnits):
-                proxy_units.append(u)
-            else:
-                basic_units.append(u)
-                
-        # for all proxy units, get their basic units. This list may have duplicates.
-        basic_units_of_proxies = [u.units for u in proxy_units]
-        
-        # extend the list of basic units, avoid/remove duplicates.
-        basic_units += [b for b in basic_units_of_proxies if b not in basic_units]
+        # first, 'complete' units_list: if there are any proxies whose basic units
+        # are not included, add them. If any of the included basic units have proxies
+        # which are not, add them as well. Make two separate lists.
+        # note that this completion comes at almost no extra cost: the expressions
+        # are added to the resulting dictionary, but that doesn't mean they'll
+        # necessarily be used (and thus, compiled).
+        basic_units, proxy_units = self.complete_units_list_split(units_list)
                 
         # sample all basic units
         samples = {}
@@ -331,18 +371,12 @@ class RBM(object):
         # compute all proxy units
         for u in proxy_units:
             samples[u] = u.func(samples[u.units])
-       
-        # optional: remove all units that weren't in the units_list.
-        for u in samples:
-            if u not in units_list:
-                del samples[u]
         
         return samples
         
     def mean_field(self, units_list, vmap):
-        # no consistency need be enforced when using mean field, this is just a wrapper
-        # that calls the respective units' mean_field method, for consistency with the
-        # RBM.sample method.
+        units_list = self.complete_units_list(units_list)
+        # no consistency need be enforced when using mean field.
         return dict((u, u.mean_field(vmap)) for u in units_list)
 
     def __repr__(self):

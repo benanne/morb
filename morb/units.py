@@ -71,6 +71,7 @@ class LearntPrecisionGaussianUnits(Units):
         super(LearntPrecisionGaussianUnits, self).__init__(rbm, name)
         proxy_name = (name + "_precision" if name is not None else None)
         self.precision_units = LearntPrecisionGaussianProxyUnits(rbm, self, name=proxy_name)
+        self.proxy_units = [self.precision_units]
 
     def sample(self, vmap):
         a1 = self.activation(vmap)

@@ -115,8 +115,8 @@ class LearntPrecisionGaussianBinaryRBM(RBM):
         self.h = units.BinaryUnits(self, name='h') # hiddens
         # parameters
         self.Wm = parameters.ProdParameters(self, [self.v, self.h], theano.shared(value = self._initial_W(), name='Wm'), name='Wm') # weights
-        self.Wp = parameters.ProdParameters(self, [self.v.precision_units, self.h], theano.shared(value = self._initial_W(), name='Wp'), name='Wp') # weights
-        self.bv = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bias(self.n_visible), name='bv'), name='bv') # visible bias
+        self.Wp = parameters.ProdParameters(self, [self.v.precision_units, self.h], theano.shared(value = -np.abs(self._initial_W()), name='Wp'), name='Wp') # weights
+        self.bvm = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bias(self.n_visible), name='bvm'), name='bvm') # visible bias
         self.bvp = parameters.BiasParameters(self, self.v.precision_units, theano.shared(value = self._initial_bias(self.n_visible), name='bvp'), name='bvp') # precision bias
         self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bias(self.n_hidden), name='bh'), name='bh') # hidden bias
         
