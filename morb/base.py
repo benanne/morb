@@ -50,24 +50,19 @@ class Parameters(object):
     def __init__(self, rbm, units_list, name=None):
         self.rbm = rbm
         self.units_list = units_list
-        self.terms = {} # terms is a dict of FUNCTIONS that take a vmap variable mapping dict.
+        self.terms = {} # terms is a dict of FUNCTIONS that take a vmap.
+        self.energy_gradients = {} # a dict of FUNCTIONS that take a vmap.
         self.name = name
         self.rbm.add_parameters(self)
         
     def activation_term_for(self, units, vmap):
         return self.terms[units](vmap)
         
+    def energy_gradient_for(self, variable, vmap):
+        return self.energy_gradients[variable](vmap)
+        
     def energy_term(self, vmap):
         raise NotImplementedError("Parameters base class")
-        
-    def gradient(self, vmap):
-        # gives the parameter update in terms of the statistics
-        raise NotImplementedError("Parameters base class")
-        
-    # @property
-    # def variables(self):
-    #     raise NotImplementedError("Parameters base class")
-    # # cannot do this because then it can't be assigned in subclasses :(
         
     def affects(self, units):
         return (units in self.units_list)
@@ -80,89 +75,109 @@ class Parameters(object):
 ### Base classes: training (parameter updates) ###
 
 
-class ParamUpdater(object):
-    # A ParamUpdater object updates a single Parameters object. Multiple ParamUpdaters can compute updates for a single Parameters object, which can then be aggregated by composite ParamUpdaters (like the SumParamUpdater)
-    def __init__(self, parameters, stats_list=[]):
-        # parameters is A SINGLE Parameters object. not a list.
-        self.parameters = parameters
+class Updater(object):
+    # An Updater object updates a single parameter variable. Multiple Updaters can compute updates for a single variable, which can then be aggregated by composite Updaters (like the SumUpdater)
+    def __init__(self, variable, stats_list=[]):
+        # variable is a single parameter variable, not a Parameters object or a list of variables.
+        self.variable = variable
         self.stats_list = stats_list
-        self.theano_updates = {} # some ParamUpdaters have state. Most don't, so then this is just
-        # an empty dictionary. Those who do have state (like the MomentumParamUpdater) override
+        self.theano_updates = {} # some Updaters have state. Most don't, so then this is just
+        # an empty dictionary. Those who do have state (like the MomentumUpdater) override
         # this variable.
                 
     def get_update(self):
-        raise NotImplementedError("ParamUpdater base class")
+        raise NotImplementedError("Updater base class")
         
     def get_theano_updates(self):
         """
-        gets own updates and the updates of all contained paramupdaters (if applicable).
+        gets own updates and the updates of all contained updaters (if applicable).
         """
         return self.theano_updates
         
-    def __add__(self, p2):
-        return SumParamUpdater([self, p2])
+    def _to_updater(self, e):
+        """
+        helper function that turns any expression into an updater
+        """
+        if not isinstance(e, Updater):
+            eu = ExpressionUpdater(self.variable, e)
+            return eu
+        else:
+            return e
         
-    def __neg__(self):
-        return ScaleParamUpdater(self, -1)
+    def __add__(self, p2):
+        p2 = self._to_updater(p2)
+        return SumUpdater([self, eu])
         
     def __sub__(self, p2):
+        p2 = self._to_updater(p2)
         return self + (-p2)
         
-    def __rmul__(self, a):
-        return ScaleParamUpdater(self, a)
-        # a is assumed to be a scalar!
+    __radd__ = __add__
+    __rsub__ = __sub__
+        
+    def __neg__(self):
+        return ScaleUpdater(self, -1)
         
     def __mul__(self, a):
-        return ScaleParamUpdater(self, a)
+        return ScaleUpdater(self, a)
         # a is assumed to be a scalar!
         
     def __div__(self, a):
         return self * (1.0/a)
         
-    def __rdiv__(self, a):
-        return self * (1.0/a)
+    __rmul__ = __mul__
+    __rdiv__ = __div__
         
 
+# this extension has to be here because it's used in the base class
+class ExpressionUpdater(Updater):
+    """
+    An updater that returns a specified expression as its update.
+    Mainly useful internally.
+    """
+    def __init__(self, variable, expression):
+        super(ExpressionUpdater, self).__init__(variable)
+        self.expression = expression
+        
+    def get_update(self):
+        return self.expression
+
+     
 # this extension has to be here because it's used in the base class        
-class ScaleParamUpdater(ParamUpdater):
+class ScaleUpdater(Updater):
     def __init__(self, pu, scaling_factor):
-        super(ScaleParamUpdater, self).__init__(pu.parameters, pu.stats_list)
+        super(ScaleUpdater, self).__init__(pu.variable, pu.stats_list)
         self.pu = pu
         self.scaling_factor = scaling_factor
         
     def get_update(self):
-        return [self.scaling_factor * d for d in self.pu.get_update()]
+        return self.scaling_factor * self.pu.get_update()
         
     def get_theano_updates(self):
-        u = {} # a scale param_updater has no state, so it has no theano updates of its own.
+        u = {} # a scale updater has no state, so it has no theano updates of its own.
         u.update(self.pu.get_theano_updates())
         return u
-
+        
 # this extension has to be here because it's used in the base class
-class SumParamUpdater(ParamUpdater):
-    def __init__(self, param_updaters):
-        # assert that all param_updaters affect the same Parameters object, gather stats collectors
-        self.param_updaters = param_updaters
+class SumUpdater(Updater):
+    def __init__(self):
+        # assert that all updaters affect the same variable, gather stats collectors
+        self.updaters = updaters
         stats_list = []
-        for pu in param_updaters:
-            if pu.parameters != param_updaters[0].parameters:
-                raise RuntimeError("Cannot add ParamUpdaters that affect a different Parameters object together")        
+        for pu in updaters:
+            if pu.variable != updaters[0].variable:
+                raise RuntimeError("Cannot add Updaters that affect a different variable together")        
             stats_list.extend(pu.stats_list)
         stats_list = _unique(stats_list) # we only need each Stats object once.
         
-        super(SumParamUpdater, self).__init__(param_updaters[0].parameters, stats_list)
+        super(SumUpdater, self).__init__(updaters[0].variable, stats_list)
         
     def get_update(self):
-        updaters = self.param_updaters[:] # make a copy
-        first_updater = updaters.pop(0)
-        s = first_updater.get_update()
-        for pu in updaters: # iterate over the REMAINING updaters
-            s = [sd + d for sd, d in zip(s, pu.get_update())]
-        return s
+        return sum(pu.get_update() for pu in self.updaters)
         
     def get_theano_updates(self):
-        u = {} # a sum param_updater has no state, so it has no theano updates of its own.
-        for pu in self.param_updaters:
+        u = {} # a sum updater has no state, so it has no theano updates of its own.
+        for pu in self.updaters:
             u.update(pu.get_theano_updates())
         return u
         
@@ -187,25 +202,11 @@ class Trainer(object):
             theano_updates.update(s.get_theano_updates())
         
         if train:
-            # calculate variable updates
-            # due to parameter tying, it is possible that there are multiple updaters for the same variable!
-            # So first, gather all updates for all the variables in a dictionary.
             variable_updates = {}
-            for p, pu in self.umap.items():
-                theano_updates.update(pu.get_theano_updates()) # ParamUpdater state updates
-                for var, update in zip(p.variables, pu.get_update()):
-                    if var not in variable_updates:
-                        variable_updates[var] = [update]
-                    else:
-                        variable_updates[var].append(update)
-            
-            # sum all updates corresponding to a given variable and add it to the variable,
-            # and insert this as a theano update
-            for var, updates in variable_updates.items():
-                theano_updates[var] = var + sum(updates)
+            for v, pu in self.umap.items()
+                theano_updates.update(pu.get_theano_updates()) # Updater state updates
+                theano_updates[v] = pu.get_update() # variable update
                 
-        return theano_updates
-
 
 ### Base classes: RBM container class ###
 
@@ -219,6 +220,15 @@ class RBM(object):
         
     def add_parameters(self, params):
         self.params_list.append(params)
+        
+    @property
+    def variables(self):
+        """
+        property that returns a set of all parameter variables.
+        """
+        # This is a set, because if it were a regular list,
+        #there would be duplicates when parameters are tied.
+        return set(variable for params in self.params_list for variable in params.variables)
                 
     def params_affecting(self, units):
         """
@@ -252,6 +262,12 @@ class RBM(object):
         # finally, remove the given units and return the others
         return set([u for u in dependent_units_list if u not in given_units_list])
         # note that there are no dependency checks here.
+        
+    def energy_gradient(self, variable, vmap):
+        """
+        sums the gradient contributions of all Parameters instances for the given variable.
+        """
+        return sum(p.energy_gradient_for(variable, vmap) for p in params_list if variable in p.variables)
         
     def energy(self, vmap):
         terms = [params.energy_term(vmap) for params in self.params_list]

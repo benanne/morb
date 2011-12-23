@@ -1,7 +1,10 @@
-TODO: Think about a mechanism to apply constraints to parameters.
-  modify ParamUpdaters to return updated parameters instead of additive updates. Think about how we can deal with tied parameters in that case... also, it might be desirable to have separate updaters for each VARIABLE, i.e. not for each Parameters object, so that different learning rates and regularisation can be used.
-  * rename 'ParamUpdater' to 'Updater', and tie it to a Theano shared variable, rather than to a Parameters instance.
+TODO: ParamUpdaters have some flaws that need to be remedied by rethinking the 'Updater' mechanism
+  - only additive updates are possible at the moment. Although this is the most common usecase, multiplicative update rules also exist. ParamUpdaters should therefore no longer return additive updates, but rather the new parameter values. It should be possible to just write (Parameters() + 0.001 * ParamUpdater()) and then a ParamUpdater is returned (using ParamUpdater.__radd__ and .__rsub__)
 
+  * update all examples
+
+TODO: implement Updaters that enforce positivity/negativity
+  
 TODO: Finish test_gaussian_learntprecision.py, this will require an updater that constrains updates to be negative.
 - verify whether the proxy units are being sampled at all when necessary, I'm not convinced that this is the case at the moment.
 
