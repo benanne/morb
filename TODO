@@ -1,4 +1,5 @@
-TODO: try the gaussian RBM with learnt precision on CIFAR-10.
+TODO: try the gaussian RBM with learnt precision on MNIST.
+  maybe also CIFAR-10. Might have to have a closer look at their tech report to get this to work.
 
 TODO: truncated exponential units
     - try on MNIST instead of the toy example, see what happens
