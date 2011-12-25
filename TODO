@@ -1,3 +1,5 @@
+TODO: when a Units instance is sampled, this sample method should be responsible for 'completing' the supplied vmap first. same for mean field. Basically, every method that takes a vmap (and doesn't call another method that takes a vmap), I guess. This makes more sense than having to do it manually all the time in cd_stats. if v = x², then a partial vmap containing only v completely defines the input, so it should suffice.
+
 TODO: try the gaussian RBM with learnt precision on MNIST.
   maybe also CIFAR-10. Might have to have a closer look at their tech report to get this to work.
 
