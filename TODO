@@ -78,8 +78,6 @@ TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but als
 
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
 
-TODO: spike and slab RBMs?
-
 TODO: AIS
 
 TODO: Exact partition function calculation
@@ -124,7 +122,8 @@ Theoretically this should already be possible, but it's a good idea to actually 
   - the deeplearning.net tutorials now include a tutorial for building the HMC sampler that was used for the visibles in this paper, and it looks pretty damn complicated. Don't waste time on this for now. 
   - technically, an mcRBM isn't even an RBM!
 
-
+- spike and slab RBMs
+  - these require a special sampling procedure (in 3 steps instead of 2) and are thus not compatible with cd_stats. It will probably be a challenge to fit these into the framework, if it's possible at all. Maybe abstracting out the sampling procedure from cd_stats is a good starting point? That way, maybe HMC could be used for the mcRBM as well.
 
 
 *** PRELIMINARY DOCUMENTATION ***

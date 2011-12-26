@@ -34,8 +34,8 @@ test_set_x, test_set_y = test_set
 
 
 # TODO DEBUG
-train_set_x = train_set_x[:1000]
-valid_set_x = valid_set_x[:100]
+train_set_x = train_set_x[:10000]
+valid_set_x = valid_set_x[:1000]
 
 
 n_visible = train_set_x.shape[1]
@@ -45,7 +45,7 @@ n_hidden_precision = 100
 mb_size = 20
 k = 1 # 15
 learning_rate = 0.01 # 0.1
-epochs = 200
+epochs = 2000
 
 
 print ">> Constructing RBM..."
