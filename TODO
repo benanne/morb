@@ -1,3 +1,8 @@
+TODO: controlling "mean field" in cd_stats should be more granular. It should be possible to indicate, for each set of units, whether 'mean_field' or 'sample' should be used, both during gibbs sampling and for the resulting statistics. Although this complicates things a bit with rbm.sample and rbm.mean_field...
+  maybe as a slightly less granular alternative, it should be possible to set it for visibles and for hiddens, during gibbs sampling and for the resulting statistics (so 4 settings in total).
+  
+TODO: mean_field only makes sense for units for which the energy function is linear. Adapt the interface accordingly (cd_stats will have to deal with non-implemented mean_field methods differently).
+
 TODO: wat glue code om RBMs te stacken in DBNs.
     - training:
       - train laag 1
@@ -13,13 +18,6 @@ TODO: wat glue code om RBMs te stacken in DBNs.
       - gegeven een 'startpunt' uit de data
       - gegeven een configuratie van top hiddens
       - ook 'gedeeltelijk' samplen, van laag m naar laag n of zo
-
-
-TODO: gaussian with learnt precision test: get NaNs with mean_field. Figure out where they're coming from. E[X²] might be the culprit.
-With sampling, it doesn't crash but it doesn't converge either - that might just be bad parameters though.
-
-TODO: try the gaussian RBM with learnt precision on MNIST.
-  maybe also CIFAR-10. Might have to have a closer look at their tech report to get this to work.
 
 TODO: truncated exponential units
     - try on MNIST instead of the toy example, see what happens

@@ -17,8 +17,8 @@ from test_utils import generate_data, get_context
 
 from theano import ProfileMode
 # mode = theano.ProfileMode(optimizer='fast_run', linker=theano.gof.OpWiseCLinker())
-mode = theano.compile.DebugMode(check_py_code=False, require_matching_strides=False)
-# mode = None
+# mode = theano.compile.DebugMode(check_py_code=False, require_matching_strides=False)
+mode = None
 
 
 # load data
@@ -39,7 +39,9 @@ valid_set_x = valid_set_x[:100]
 
 
 n_visible = train_set_x.shape[1]
-n_hidden = 100 # 500
+# n_hidden = 100 # 500
+n_hidden_mean = 100
+n_hidden_precision = 100
 mb_size = 20
 k = 1 # 15
 learning_rate = 0.01 # 0.1
@@ -47,16 +49,19 @@ epochs = 200
 
 
 print ">> Constructing RBM..."
-rbm = rbms.LearntPrecisionGaussianBinaryRBM(n_visible, n_hidden)
+# rbm = rbms.LearntPrecisionGaussianBinaryRBM(n_visible, n_hidden)
+rbm = rbms.LearntPrecisionSeparateGaussianBinaryRBM(n_visible, n_hidden_mean, n_hidden_precision)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k) # , mean_field_for_visibles=False, mean_field_for_stats=False)
+# s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k, mean_field_for_visibles=False, mean_field_for_stats=False)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.hp, rbm.hm], k=k, mean_field_for_visibles=False, mean_field_for_stats=False)
 
 # We create an updater for each parameter variable.
 # IMPORTANT: the precision parameters must be constrained to be negative.
-variables = [rbm.Wm.W, rbm.bvm.b, rbm.bh.b, rbm.Wp.W, rbm.bvp.b]
+# variables = [rbm.Wm.W, rbm.bvm.b, rbm.bh.b, rbm.Wp.W, rbm.bvp.b]
+variables = [rbm.Wm.W, rbm.bvm.b, rbm.bhm.b, rbm.Wp.W, rbm.bvp.b, rbm.bhp.b]
 precision_variables = [rbm.Wp.W, rbm.bvp.b]
 
 umap = {}
@@ -167,12 +172,12 @@ for epoch in range(epochs):
     # plot some samples
     plt.figure(2)
     plt.clf()
-    plt.imshow(vdata[0][0].reshape((28, 28)))
+    plt.imshow(vdata[0][0].reshape((28, 28)), vmin=0, vmax=1)
     plt.colorbar()
     plt.draw()
     plt.figure(3)
     plt.clf()
-    plt.imshow(vmodel[0][0].reshape((28, 28)))
+    plt.imshow(vmodel[0][0].reshape((28, 28)), vmin=0, vmax=1)
     plt.colorbar()
     plt.draw()
 
