@@ -6,7 +6,7 @@ import theano
 
 
 def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, mean_field_for_visibles=True, mean_field_for_stats=True, persistent_vmap=None):
-    # with 'mean_field_for_visibles', we can control whether hiddens are sampled based on visibles samples or visible means in the CD iterations.       
+    # with 'mean_field_for_visibles', we can control whether hiddens are sampled based on visibles samples or visible means in the CD iterations.
     
     # first we need to get the context, because we will have to merge it into the other vmaps.
     context_vmap = dict((u, v0_vmap[u]) for u in context_units)

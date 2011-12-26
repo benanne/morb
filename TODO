@@ -1,9 +1,12 @@
-TODO: controlling "mean field" in cd_stats should be more granular. It should be possible to indicate, for each set of units, whether 'mean_field' or 'sample' should be used, both during gibbs sampling and for the resulting statistics. Although this complicates things a bit with rbm.sample and rbm.mean_field...
-  maybe as a slightly less granular alternative, it should be possible to set it for visibles and for hiddens, during gibbs sampling and for the resulting statistics (so 4 settings in total).
+TODO: it should be possible to set mean field usage for visibles and for hiddens, during gibbs sampling and for the resulting statistics (so 4 settings in total).
+      actually, using mean field for hiddens during sampling is stupid, so either warn against it or make it impossible (3 remaining settings)
+      - maybe just splitting mean_field_for_stats into mean_field_for_visible_stats and mean_field_for_hidden_stats would suffice!
+      - a renaming of these variables is then in order. mean_field_for_visibles should then be renamed also to indicate that it only affects the gibbs chain.
   
 TODO: mean_field only makes sense for units for which the energy function is linear. Adapt the interface accordingly (cd_stats will have to deal with non-implemented mean_field methods differently).
 
 TODO: wat glue code om RBMs te stacken in DBNs.
+    * is het mogelijk dat units niet dezelfde zijn in RBM1 en RBM2? vb. sigmoidal in de ene, truncated exponential in de volgende of zo? hoe kunnen we eenvoudig specifiëren op welke manier twee RBMs aaneen hangen (met welke units)? Want dat hoeven niet noodzakelijk alle hiddens te zijn.
     - training:
       - train laag 1
       - bereken hiddens voor laag 1 en sla op (sampling? mean field?)
@@ -28,6 +31,8 @@ TODO: exponential units
     - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
 
 TODO: write some proper automated tests
+
+TODO: add some documentation to the github wiki about how the different classes interact (what are the interfaces) and about the 'linearised RBM' thing
 
 TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.
 - currently, Parameters instances specify their energy gradient. This only works when the energy is linear in the Parameters, because then the energy gradients don't depend on other parameters in that case. 
