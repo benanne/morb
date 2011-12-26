@@ -1,3 +1,20 @@
+TODO: wat glue code om RBMs te stacken in DBNs.
+    - training:
+      - train laag 1
+      - bereken hiddens voor laag 1 en sla op (sampling? mean field?)
+      - train laag 2
+      - bereken hiddens voor laag 2 en sla op
+      - ...
+      - train laag n
+      (hiddens hoeven niet berekend te worden voor laag n)
+      * mogelijke problemen: grote datasets vereisen waarschijnlijk dat de berekende hiddens ergens kunnen opgeslagen worden of zo. Het zou dus goed zijn om een 'infer'-generator te hebben. De standaard 'train' methode zou die dan volledig doorlopen en alles in't geheugen houden, maar als dat niet mogelijk is kan er dus eenvoudig een alternatief geschreven worden. 
+      * mss is het idee van 'lagen' te beperkend, in feite kunnen DBNs ook bomen zijn (vb. Multimodal Deep Learning). De verschillende RBMs 'hangen' aaneen via bepaalde units instances. 
+    - sampling/inference:
+      - gegeven een 'startpunt' uit de data
+      - gegeven een configuratie van top hiddens
+      - ook 'gedeeltelijk' samplen, van laag m naar laag n of zo
+
+
 TODO: gaussian with learnt precision test: get NaNs with mean_field. Figure out where they're coming from. E[X²] might be the culprit.
 With sampling, it doesn't crash but it doesn't converge either - that might just be bad parameters though.
 
@@ -11,8 +28,6 @@ TODO: truncated exponential units
   
 TODO: exponential units
     - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
-
-TODO: figure out if the rbm.free_energy function is still correct for a 'linearised' RBM (it should be)
 
 TODO: write some proper automated tests
 
@@ -30,11 +45,6 @@ dE/dR = dE/dv*dv/dR. Since v = Rx, dv/dR is easy. dE/dv is also fairly easy. One
 TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
 
 TODO: consider implementing 'factors' as standalone elements. Using the 'message passing' interpretation this might even be easy. And it would make implementing factored Nth order RBMs a breeze (although I'm not sure if that's useful), and allow for 'convolutional factored' models etc.
-    
-TODO: wat glue code om RBMs te stacken in DBNs.
-    - samplen van een DBN
-    - DBN training (laag-per-laag)
-    - DBN inference
     
 TODO: passen autoencoders ook binnen dit raamwerk? mss moeten bepaalde dingen dan hernoemd worden...
 
@@ -67,10 +77,6 @@ TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_t
 
 TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
   + convention: minibatch contributions are SUMMED rather than averaged.
-
-TODO: mcRBM
-  - requires HMC for sampling of visibles given hiddens => custom sampler for the visibles?
-  - this in turn requires free energy, I think
 
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
 
@@ -105,6 +111,7 @@ TODO: when parameters are being tied, it is interesting to be able to specify le
 
 TODO: might want to clean up cd_stats with regards to the mean field business. that's handled a bit untuitively at the moment.
 
+TODO: two-way factored RBM from http://www.cs.utoronto.ca/~hinton/absps/netflixICML.pdf section 5
 
 
 
@@ -114,6 +121,11 @@ Another use case where this would happen is when a variable (f.e. linearly decay
 To support these use cases, it has to be possible to use shared Theano variables as scale factors for ParamUpdaters. (The learning rate is precisely such a scale factor.) This makes it possible to update their values every epoch, or even every training step.
 In fact, generally, it would be cool if any 'metaparameter' could be symbolic.
 Theoretically this should already be possible, but it's a good idea to actually try some of these things and see if anything is still missing to support this.
+
+- mcRBM
+  - the deeplearning.net tutorials now include a tutorial for building the HMC sampler that was used for the visibles in this paper, and it looks pretty damn complicated. Don't waste time on this for now. 
+  - technically, an mcRBM isn't even an RBM!
+
 
 
 
