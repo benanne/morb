@@ -14,8 +14,9 @@ def bernoulli(a):
     # a is the bernoulli parameter
     return theano_rng.binomial(size=a.shape, n=1, p=a, dtype=theano.config.floatX) 
 
-def gaussian(a, std=1.0):
-    # the mean parameter of a gaussian with fixed variance is the activation.
+def gaussian(a, var=1.0):
+    # a is the mean, var is the variance (not std or precision!)
+    std = T.sqrt(var)
     return theano_rng.normal(size=a.shape, avg=a, std=std, dtype=theano.config.floatX)
 
         

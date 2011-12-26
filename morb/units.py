@@ -63,8 +63,11 @@ class LearntPrecisionGaussianProxyUnits(ProxyUnits):
         super(LearntPrecisionGaussianProxyUnits, self).__init__(rbm, units, func, name)
         
     def mean_field(self, vmap):
-        raise NotImplementedError("No mean field for now, sorry... still have to implement this.")
-        # TODO: implement E[x**2] for x gaussian
+        # used the relation E[X**2] = sigma**2 + mu**2 to arrive at the formula below.
+        # TODO: verify that this method should return E[f(x)] and not f(E[x])... I'm still not 100% convinced.
+        a1 = self.units.activation(vmap)
+        a2 = self.activation(vmap)
+        return (a1 - 2*a2) / (4 * (a2**2))
              
 class LearntPrecisionGaussianUnits(Units):
     def __init__(self, rbm, name=None):
@@ -76,12 +79,12 @@ class LearntPrecisionGaussianUnits(Units):
     def sample(self, vmap):
         a1 = self.activation(vmap)
         a2 = self.precision_units.activation(vmap)
-        return samplers.gaussian(a1/(2*a2), 1/(2*a2))
+        return samplers.gaussian(a1/(-2*a2), 1/(-2*a2))
         
     def mean_field(self, vmap):
         a1 = self.activation(vmap)
         a2 = self.precision_units.activation(vmap)
-        return a1/(2*a2)
+        return a1/(-2*a2)
   
 
         

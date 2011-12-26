@@ -25,7 +25,7 @@ mode = None
 # load data
 print ">> Loading dataset..."
 
-f = gzip.open('mnist.pkl.gz','rb')
+f = gzip.open('datasets/mnist.pkl.gz','rb')
 train_set, valid_set, test_set = cPickle.load(f)
 f.close()
 
