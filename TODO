@@ -1,8 +1,3 @@
-TODO: mean field granularity        
-      - update test files to use new cd_stats mean field spec and to no longer use SigmoidUnits
-  
-TODO: mean_field only makes sense for units for which the energy function is linear. Adapt the interface accordingly (cd_stats will have to deal with non-implemented mean_field methods differently).
-
 TODO: wat glue code om RBMs te stacken in DBNs.
     * is het mogelijk dat units niet dezelfde zijn in RBM1 en RBM2? vb. sigmoidal in de ene, truncated exponential in de volgende of zo? hoe kunnen we eenvoudig specifiëren op welke manier twee RBMs aaneen hangen (met welke units)? Want dat hoeven niet noodzakelijk alle hiddens te zijn.
     - training:
@@ -24,6 +19,7 @@ TODO: truncated exponential units
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
   
 TODO: exponential units
+    - implement them
     - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
 
 TODO: write some proper automated tests
