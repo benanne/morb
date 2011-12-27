@@ -26,7 +26,7 @@ Example
 Below is a simple example, in which an RBM with binary visibles and binary hiddens is trained on an unspecified dataset using one-step contrastive divergence (CD-1), with some weight decay.
 
 ```python
-from morb import base, units, parameters, stats, param_updaters, trainers, monitors
+from morb import base, units, parameters, stats, updaters, trainers, monitors
 import numpy
 import theano.tensor as T
 
@@ -55,11 +55,11 @@ initial_vmap = { rbm.v: T.matrix('v') }
 ## compute symbolic CD-1 statistics
 s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
 
-## create an updater for each set of parameters
+## create an updater for each parameter variable
 umap = {}
-for params in [rbm.W, rbm.bv, rbm.bh]:
-    pu = learning_rate * (param_updaters.CDParamUpdater(params, s) - decay * param_updaters.DecayParamUpdater(params))
-    umap[params] = pu
+for variable in [rbm.W.W, rbm.bv.b, rbm.bh.b]:
+    new_value = variable + learning_rate * (updaters.CDUpdater(rbm, variable, s) - decay * updaters.DecayUpdater(variable))
+    umap[variable] = new_value
 
 ## monitor reconstruction cost during training
 mse = monitors.reconstruction_mse(s, rbm.v)

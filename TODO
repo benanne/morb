@@ -1,3 +1,5 @@
+TODO: make the parameters variable interface a bit more uniform (W.W and bv.b look silly)
+
 TODO: wat glue code om RBMs te stacken in DBNs.
     * is het mogelijk dat units niet dezelfde zijn in RBM1 en RBM2? vb. sigmoidal in de ene, truncated exponential in de volgende of zo? hoe kunnen we eenvoudig specifiëren op welke manier twee RBMs aaneen hangen (met welke units)? Want dat hoeven niet noodzakelijk alle hiddens te zijn.
     - training:
