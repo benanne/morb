@@ -23,13 +23,13 @@ class Units(object):
         return sum(terms)
             
     def sample(self, vmap):
-        raise NotImplementedError("Sampling not supported for this Units instance")
+        raise NotImplementedError("Sampling not supported for this Units instance: %s" % repr(self))
         
     def mean_field(self, vmap):
-        raise NotImplementedError("Mean field not supported for this Units instance")
+        raise NotImplementedError("Mean field not supported for this Units instance: %s" % repr(self))
         
     def free_energy_term(self, vmap):
-        raise NotImplementedError("Free energy calculation not supported for this Units instance")
+        raise NotImplementedError("Free energy calculation not supported for this Units instance: %s" % repr(self))
         
     def __repr__(self):
         return "<morb:Units '%s'>" % self.name

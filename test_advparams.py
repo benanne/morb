@@ -52,7 +52,7 @@ class AdvRBM(morb.base.RBM):
         self.n_visible = n_visible
         self.n_hidden = n_hidden
         # units
-        self.v = units.SigmoidUnits(self, name='v') # visibles
+        self.v = units.BinaryUnits(self, name='v') # visibles
         self.h = units.BinaryUnits(self, name='h') # hiddens
         # parameters
         self.W = parameters.AdvancedProdParameters(self, [self.v, self.h], [1,1], theano.shared(value = self._initial_W(), name='W'), name='W') # weights
@@ -85,7 +85,7 @@ initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1, mean_field_for_gibbs=[rbm.v], mean_field_for_stats=[rbm.v])
 
 umap = {}
 for var in rbm.variables:

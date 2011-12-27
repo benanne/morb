@@ -47,12 +47,12 @@ epochs = 15
 
 
 print ">> Constructing RBM..."
-rbm = rbms.SigmoidBinaryRBM(n_visible, n_hidden)
+rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
 
 umap = {}
 for var in rbm.variables:

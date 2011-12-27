@@ -60,7 +60,7 @@ initial_vmap = { rbm.v: T.matrix('v') }
 
 # We use single-step contrastive divergence (CD-1) to train the RBM. For this, we can use
 # the CDParamUpdater. This requires symbolic CD-1 statistics:
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1) # )
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
 
 # We create an updater for each parameter variable
 umap = {}

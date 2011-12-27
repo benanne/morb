@@ -90,7 +90,7 @@ shape_info = {
 
 # rbms.SigmoidBinaryRBM(n_visible, n_hidden)
 rbm = morb.base.RBM()
-rbm.v = units.SigmoidUnits(rbm, name='v') # visibles
+rbm.v = units.BinaryUnits(rbm, name='v') # visibles
 rbm.h = units.BinaryUnits(rbm, name='h') # hiddens
 rbm.W = parameters.Convolutional2DParameters(rbm, [rbm.v, rbm.h], theano.shared(value=initial_W, name='W'), name='W', shape_info=shape_info)
 # one bias per map (so shared across width and height):
@@ -101,7 +101,7 @@ initial_vmap = { rbm.v: T.tensor4('v') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
 
 umap = {}
 for var in rbm.variables:

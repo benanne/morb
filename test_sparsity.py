@@ -43,12 +43,12 @@ n_hidden = 100
 
 
 print ">> Constructing RBM..."
-rbm = rbms.SigmoidBinaryRBM(n_visible, n_hidden)
+rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
 
 sparsity_targets = { rbm.h: 0.1 }
 

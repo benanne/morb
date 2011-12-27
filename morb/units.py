@@ -81,9 +81,9 @@ class SoftmaxWithZeroUnits(Units):
 class TruncatedExponentialUnits(Units):
     def sample(self, vmap):
         a = self.activation(vmap)
-        return samplers.truncated_exponential(a)
+        return samplers.truncated_exponential(-a) # lambda = -a!
         
     def mean_field(self, vmap):
         a = self.activation(vmap)
-        return samplers.truncated_exponential_mean(a)
+        return samplers.truncated_exponential_mean(-a)
 

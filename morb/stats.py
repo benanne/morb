@@ -5,26 +5,45 @@ import numpy as np
 import theano
 
 
-def gibbs_step(rbm, vmap, units_list, mean_field=[]): # implements a single gibbs step, and makes sure mean field is only used where it should be
+def gibbs_step(rbm, vmap, units_list, mean_field_for_stats=[], mean_field_for_gibbs=[]):
+    # implements a single gibbs step, and makes sure mean field is only used where it should be.
+    # returns two vmaps, one for stats and one for gibbs.
+    # also enforces consistency between samples, between the gibbs vmap and the stats vmap.
     # the provided lists and vmaps are expected to be COMPLETE. Otherwise, the behaviour is unspecified.
     
-    # get the units that should be sampled, and which ones should be computed using mean field
-    units_sample = units_list[:] # make a copy
-    units_mean_field = []
-    for u in mean_field:
-        if u in units_sample:
-            units_sample.remove(u) # remove all mean field units from the sample list
-            units_mean_field.append(u) # add them to the mean field list instead
-        
-    out_vmap = rbm.sample(units_sample, vmap) # sample the units that should be sampled (rbm.sample enforces consistency between basic units and proxies)
-    mf_vmap = rbm.mean_field(units_mean_field, vmap) # compute mean field value for the others
+    # first, find out which units we need to sample for the stats vmap, and which for the gibbs vmap.
+    # Mean field will be used for the others.
+    units_sample_stats = units_list[:] # make a copy
+    units_mean_field_stats = []
+    for u in mean_field_for_stats:
+        if u in units_sample_stats:
+            units_sample_stats.remove(u) # remove all mean field units from the sample list
+            units_mean_field_stats.append(u) # add them to the mean field list instead
+
+    units_sample_gibbs = units_list[:]
+    units_mean_field_gibbs = []
+    for u in mean_field_for_gibbs:
+        if u in units_sample_gibbs:
+            units_sample_gibbs.remove(u) # remove all mean field units from the sample list
+            units_mean_field_gibbs.append(u) # add them to the mean field list instead
+
+    # now we can compute the total list of units to sample.
+    # By sampling them all in one go, we can enforce consistency.
+    units_sample = list(set(units_sample_gibbs + units_sample_stats))
+    sample_vmap = rbm.sample(units_sample, vmap)
+    units_mean_field = list(set(units_mean_field_gibbs + units_mean_field_stats))
+    mean_field_vmap = rbm.mean_field(units_mean_field, vmap)
     
-    # return joint vmap
-    out_vmap.update(mf_vmap)
-    return out_vmap
+    # now, construct the gibbs and stats vmaps
+    stats_vmap = dict((u, sample_vmap[u]) for u in units_sample_stats)
+    stats_vmap.update(dict((u, mean_field_vmap[u]) for u in units_mean_field_stats))
+    gibbs_vmap = dict((u, sample_vmap[u]) for u in units_sample_gibbs)
+    gibbs_vmap.update(dict((u, mean_field_vmap[u]) for u in units_mean_field_gibbs))
+        
+    return stats_vmap, gibbs_vmap
 
 
-def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, mean_field_for_gibbs=[], mean_field_for_stats=[], persistent_vmap=None):
+def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, mean_field_for_stats=[], mean_field_for_gibbs=[], persistent_vmap=None):
     # mean_field_for_gibbs is a list of units for which 'mean_field' should be used during gibbs sampling, rather than 'sample'.
     # mean_field_for_stats is a list of units for which 'mean_field' should be used to compute statistics, rather than 'sample'.
 
@@ -40,8 +59,7 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
     context_vmap = dict((u, v0_vmap[u]) for u in context_units)
 
     h0_activation_vmap = dict((h, h.activation(v0_vmap)) for h in hidden_units)
-    h0_gibbs_vmap = gibbs_step(rbm, v0_vmap, hidden_units, mean_field_for_gibbs)
-    h0_stats_vmap = gibbs_step(rbm, v0_vmap, hidden_units, mean_field_for_stats)
+    h0_stats_vmap, h0_gibbs_vmap = gibbs_step(rbm, v0_vmap, hidden_units, mean_field_for_stats, mean_field_for_gibbs)
             
     # add context
     h0_activation_vmap.update(context_vmap)
@@ -60,15 +78,13 @@ def cd_stats(rbm, v0_vmap, visible_units, hidden_units, context_units=[], k=1, m
         v1_in_vmap.update(context_vmap) # add context
         
         v1_activation_vmap = dict((v, v.activation(v1_in_vmap)) for v in visible_units)
-        v1_gibbs_vmap = gibbs_step(rbm, v1_in_vmap, visible_units, mean_field_for_gibbs)
-        v1_stats_vmap = gibbs_step(rbm, v1_in_vmap, visible_units, mean_field_for_stats)
+        v1_stats_vmap, v1_gibbs_vmap = gibbs_step(rbm, v1_in_vmap, visible_units, mean_field_for_stats, mean_field_for_gibbs)
 
         h1_in_vmap = v1_gibbs_vmap.copy()
         h1_in_vmap.update(context_vmap) # add context
 
         h1_activation_vmap = dict((h, h.activation(h1_in_vmap)) for h in hidden_units)
-        h1_gibbs_vmap = gibbs_step(rbm, h1_in_vmap, hidden_units, mean_field_for_gibbs)
-        h1_stats_vmap = gibbs_step(rbm, h1_in_vmap, hidden_units, mean_field_for_stats)
+        h1_stats_vmap, h1_gibbs_vmap = gibbs_step(rbm, h1_in_vmap, hidden_units, mean_field_for_stats, mean_field_for_gibbs)
             
         # get the v1 values in a fixed order
         v1_activation_values = [v1_activation_vmap[u] for u in visible_units]
