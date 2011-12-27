@@ -35,22 +35,7 @@ class BinaryBinaryRBM(RBM): # the basic RBM, with binary visibles and binary hid
         
     def _initial_bh(self):
         return np.zeros(self.n_hidden, dtype = theano.config.floatX)
-        
-        
-class SigmoidBinaryRBM(BinaryBinaryRBM):
-    def __init__(self, n_visible, n_hidden):
-        super(BinaryBinaryRBM, self).__init__() # skip binarybinaryRBM constructor, since we've overridden it.
-        # data shape
-        self.n_visible = n_visible
-        self.n_hidden = n_hidden
-        # units
-        self.v = units.SigmoidUnits(self, name='v') # visibles
-        self.h = units.BinaryUnits(self, name='h') # hiddens
-        # parameters
-        self.W = parameters.ProdParameters(self, [self.v, self.h], theano.shared(value = self._initial_W(), name='W'), name='W') # weights
-        self.bv = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bv(), name='bv'), name='bv') # visible bias
-        self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bh(), name='bh'), name='bh') # hidden bias
-        
+              
 
 
 class BinaryBinaryCRBM(BinaryBinaryRBM):
@@ -101,6 +86,7 @@ class GaussianBinaryRBM(RBM): # Gaussian visible units
         return np.zeros(self.n_hidden, dtype = theano.config.floatX)
 
 
+
 class LearntPrecisionGaussianBinaryRBM(RBM):
     """
     Important: Wp and bvp should be constrained to be negative.
@@ -129,6 +115,7 @@ class LearntPrecisionGaussianBinaryRBM(RBM):
         
     def _initial_bias(self, n):
         return np.zeros(n, dtype = theano.config.floatX)
+
 
 class LearntPrecisionSeparateGaussianBinaryRBM(RBM):
     """

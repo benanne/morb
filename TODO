@@ -1,7 +1,12 @@
-TODO: it should be possible to set mean field usage for visibles and for hiddens, during gibbs sampling and for the resulting statistics (so 4 settings in total).
-      actually, using mean field for hiddens during sampling is stupid, so either warn against it or make it impossible (3 remaining settings)
-      - maybe just splitting mean_field_for_stats into mean_field_for_visible_stats and mean_field_for_hidden_stats would suffice!
-      - a renaming of these variables is then in order. mean_field_for_visibles should then be renamed also to indicate that it only affects the gibbs chain.
+TODO: mean field granularity
+      - possible issue with current implementation:
+        * if no mean field is used: hk and vk will be sampled based on h0_gibbs, which is different from h0_stats! so the samples are not compatible... this is undesirable.
+        * what it boils down to is that we need to:
+            - figure out which units we need to sample, both for the gibbs vmap and for the stats vmap
+            - sample them ONCE
+            - construct the gibbs and the stats vmaps, and complete them by computing the mean field values of the missing units.
+        
+      - update test files to use new cd_stats mean field spec and to no longer use SigmoidUnits
   
 TODO: mean_field only makes sense for units for which the energy function is linear. Adapt the interface accordingly (cd_stats will have to deal with non-implemented mean_field methods differently).
 
@@ -129,6 +134,8 @@ Theoretically this should already be possible, but it's a good idea to actually 
 
 - spike and slab RBMs
   - these require a special sampling procedure (in 3 steps instead of 2) and are thus not compatible with cd_stats. It will probably be a challenge to fit these into the framework, if it's possible at all. Maybe abstracting out the sampling procedure from cd_stats is a good starting point? That way, maybe HMC could be used for the mcRBM as well.
+  - in this code that was used for the paper: https://bitbucket.org/gdesjardins/ssrbm_utlc/src/d54c0e410964/pssrbm.py
+    s and h (the latent variables) are sampled given only v. This means that the dependence between s and h can be ignored for practical purposes, which DOES make it compatible with cd_stats, in theory...
 
 
 *** PRELIMINARY DOCUMENTATION ***

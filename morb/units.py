@@ -2,7 +2,6 @@ from morb.base import Units, ProxyUnits
 from morb import samplers, activation_functions
 import theano.tensor as T
 
-# BinaryUnits = units_type(activation_functions.sigmoid, samplers.bernoulli_mf)
 
 class BinaryUnits(Units):
     def sample(self, vmap):
@@ -18,20 +17,8 @@ class BinaryUnits(Units):
         s = - T.nnet.softplus(self.activation(vmap))
         # sum over all but the minibatch dimension
         return T.sum(s, axis=range(1, s.ndim))
-
-
-
-class SigmoidUnits(Units):
-    def sample(self, vmap):
-        a = self.activation(vmap)
-        return activation_functions.sigmoid(a)
-
-    def mean_field(self, vmap):
-        a = self.activation(vmap)
-        return activation_functions.sigmoid(a)
   
   
-        
 class GaussianPrecisionProxyUnits(ProxyUnits):
     def __init__(self, rbm, units, name=None):
         func = lambda x: x**2 / 2.0
@@ -50,7 +37,6 @@ class GaussianUnits(Units):
     def mean_field(self, vmap):
         a = self.activation(vmap)
         return a
-        
 
 
 class LearntPrecisionGaussianProxyUnits(ProxyUnits):
@@ -70,22 +56,14 @@ class LearntPrecisionGaussianUnits(Units):
         a2 = self.precision_units.activation(vmap)
         return samplers.gaussian(a1/(-2*a2), 1/(-2*a2))
         
-#    def mean_field(self, vmap):
-#        a1 = self.activation(vmap)
-#        a2 = self.precision_units.activation(vmap)
-#        return a1/(-2*a2)
-  
-
-        
+       
 # TODO later: gaussian units with custom fixed variance (maybe per-unit). This probably requires two proxies.
-
 
 class SoftmaxUnits(Units):
     def sample(self, vmap):
         a = self.activation(vmap)
         p = activation_functions.softmax(a)
         return samplers.multinomial(p)
-
 
 
 class SoftmaxWithZeroUnits(Units):
@@ -100,7 +78,6 @@ class SoftmaxWithZeroUnits(Units):
         return s
 
 
-
 class TruncatedExponentialUnits(Units):
     def sample(self, vmap):
         a = self.activation(vmap)
@@ -109,5 +86,4 @@ class TruncatedExponentialUnits(Units):
     def mean_field(self, vmap):
         a = self.activation(vmap)
         return samplers.truncated_exponential_mean(a)
-
 
