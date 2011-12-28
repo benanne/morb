@@ -1,5 +1,38 @@
 TODO: make the parameters variable interface a bit more uniform (W.W and bv.b look silly)
 
+TODO: truncated exponential units
+    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
+  
+TODO: exponential units
+    - implement them
+    - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
+    
+TODO: ReLU units
+    
+TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.
+- currently, Parameters instances specify their energy gradient. This only works when the energy is linear in the Parameters, because then the energy gradients don't depend on other parameters in that case. 
+  Unfortunately, this is not always true, for example with the variance of Gaussian units.
+  Another problem with the variance of Gaussians is that the contributions of Parameters to the energy function are no longer additive. Can this be made more general so that Gaussian units with trainable variance become possible?
+  Introduce ProxyUnits with trainable parameters. This can be used for the Gaussian stuff (v = v'/sigma) and for the linear combination stuff (v = Rx).
+  
+TODO: for the linear R parameters in the FCRBM model, we could apply the chain rule as follows:
+dE/dR = dE/dv*dv/dR. Since v = Rx, dv/dR is easy. dE/dv is also fairly easy. One could suspect that it is identical to act_v, the activation of v, but I'm not convinced this is the case. It's true when everything is linear, but what when there's gaussian units, for example?
+- Calculate dE/dv and act_v for a gaussian-binary RBM and compare.
+- Think about how this could be incorporated.
+
+TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
+
+TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
+
+TODO: Exact partition function calculation
+  - can this be formulated for a general RBM model easily?
+  - it should also be possible to select the type of units that is summed over numerically, as this is determines
+    the runtime of the computation.
+
+TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
+
+TODO: two-way factored RBM from http://www.cs.utoronto.ca/~hinton/absps/netflixICML.pdf section 5
+
 TODO: wat glue code om RBMs te stacken in DBNs.
     * is het mogelijk dat units niet dezelfde zijn in RBM1 en RBM2? vb. sigmoidal in de ene, truncated exponential in de volgende of zo? hoe kunnen we eenvoudig specifiëren op welke manier twee RBMs aaneen hangen (met welke units)? Want dat hoeven niet noodzakelijk alle hiddens te zijn.
     - training:
@@ -16,30 +49,10 @@ TODO: wat glue code om RBMs te stacken in DBNs.
       - gegeven een 'startpunt' uit de data
       - gegeven een configuratie van top hiddens
       - ook 'gedeeltelijk' samplen, van laag m naar laag n of zo
-
-TODO: truncated exponential units
-    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
-  
-TODO: exponential units
-    - implement them
-    - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
-
+    
 TODO: write some proper automated tests
 
 TODO: add some documentation to the github wiki about how the different classes interact (what are the interfaces) and about the 'linearised RBM' thing
-
-TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.
-- currently, Parameters instances specify their energy gradient. This only works when the energy is linear in the Parameters, because then the energy gradients don't depend on other parameters in that case. 
-  Unfortunately, this is not always true, for example with the variance of Gaussian units.
-  Another problem with the variance of Gaussians is that the contributions of Parameters to the energy function are no longer additive. Can this be made more general so that Gaussian units with trainable variance become possible?
-  Introduce ProxyUnits with trainable parameters. This can be used for the Gaussian stuff (v = v'/sigma) and for the linear combination stuff (v = Rx).
-  
-TODO: for the linear R parameters in the FCRBM model, we could apply the chain rule as follows:
-dE/dR = dE/dv*dv/dR. Since v = Rx, dv/dR is easy. dE/dv is also fairly easy. One could suspect that it is identical to act_v, the activation of v, but I'm not convinced this is the case. It's true when everything is linear, but what when there's gaussian units, for example?
-- Calculate dE/dv and act_v for a gaussian-binary RBM and compare.
-- Think about how this could be incorporated.
-
-TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
 
 TODO: consider implementing 'factors' as standalone elements. Using the 'message passing' interpretation this might even be easy. And it would make implementing factored Nth order RBMs a breeze (although I'm not sure if that's useful), and allow for 'convolutional factored' models etc.
     
@@ -56,33 +69,24 @@ TODO: test 1D convolution
 
 TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
  
-TODO: symmetric beta units (will have two proxies log(u) and log(1-u), and require hiddens with proxies for 1-...)
-
-TODO: ReLU units
+TODO: symmetric beta units (will have two proxies log(u) and log(1-u), and require hiddens with proxies for 1-...) - will need a beta sampler. Maybe MonteTheano has one?
 
 TODO: in a conditional RBM (f.e. with visibles v, hiddens h and context x), CD won't work if the context variable isn't supplied. This is because CD will try to update the parameters tying h/v and x regardless of whether x was supplied as context. It would be nice if this didn't happen, i.e. when x is not supplied as context, all parameters tying x are simply ignored. This would also avoid some hard-to-decipher error messages. This would require knowledge about the dependencies in the RBM, so these dependencies would have to be specified on the Parameters.
 
-TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
-
 TODO: supervised finetuning - how does this fit in the framework (separate trainers and updaters?)
-
-TODO: Look into hessian-free optimisation, maybe that fits in as well? (although I think this is pretty much always supervised?)
 
 TODO: add docstrings everywhere
  
-TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
-
 TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
   + convention: minibatch contributions are SUMMED rather than averaged.
-
-TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
+  
+TODO: docs: explain how/why parameter tying works
 
 TODO: AIS
 
-TODO: Exact partition function calculation
-  - can this be formulated for a general RBM model easily?
-  - it should also be possible to select the type of units that is summed over numerically, as this is determines
-    the runtime of the computation.
+TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
+
+TODO: Look into hessian-free optimisation, maybe that fits in as well? (although I think this is pretty much always supervised?)
 
 TODO: deep boltzmann machines?
 
@@ -99,16 +103,12 @@ TODO: rather than implicitly assuming everywhere that a parameters instance with
 TODO: model visualisation plugin using pydot? rbm.draw() or something.
   It would plot the dependencies and the Parameters objects affecting those dependencies. (this way it will also work sensibly for third order etc.)
 
+TODO: once some proper experiments have been set up, profile things (ProfileMode).
+
+
+
 - This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
 https://github.com/deeplearningais/CUV/tree/master/examples/rbm
-
-TODO: when parameters are being tied, it is interesting to be able to specify learning rates for each of the Parameters components individually, rather than for the ParamUpdater as a whole.
-
-TODO: might want to clean up cd_stats with regards to the mean field business. that's handled a bit untuitively at the moment.
-
-TODO: two-way factored RBM from http://www.cs.utoronto.ca/~hinton/absps/netflixICML.pdf section 5
-
-
 
 - Interesting train of thought: consider an RBM being trained for classification. Typically, it is pretrained unsupervisedly first, and then finetuned supervisedly. It is, however, also possible to combine both gradients and do both at once. This is suggested as future work in 'Training RBMs using approximations to the likelihood gradient' (PCD paper), so find out if they have done this yet.
 When both gradients are combined, it would make sense to put the emphasis on the unsupervised gradient at the start, and more on the supervised gradient at the end. That means the weights of the respective gradients (in practice: the scale factors of the ParamUpdaters) vary during training.
@@ -120,6 +120,7 @@ Theoretically this should already be possible, but it's a good idea to actually 
 - mcRBM
   - the deeplearning.net tutorials now include a tutorial for building the HMC sampler that was used for the visibles in this paper, and it looks pretty damn complicated. Don't waste time on this for now. 
   - technically, an mcRBM isn't even an RBM!
+  - perhaps the samplers from MonteTheano can be of use?
 
 - spike and slab RBMs
   - these require a special sampling procedure (in 3 steps instead of 2) and are thus not compatible with cd_stats. It will probably be a challenge to fit these into the framework, if it's possible at all. Maybe abstracting out the sampling procedure from cd_stats is a good starting point? That way, maybe HMC could be used for the mcRBM as well.
