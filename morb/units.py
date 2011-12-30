@@ -86,4 +86,19 @@ class TruncatedExponentialUnits(Units):
     def mean_field(self, vmap):
         a = self.activation(vmap)
         return samplers.truncated_exponential_mean(-a)
+        
+        
+
+class NRELUnits(Units):
+    """
+    Noisy rectified linear units from 'Rectified Linear Units Improve Restricted Boltzmann Machines'
+    by Nair & Hinton (ICML 2010)
+    """
+    def sample(self, vmap):
+        a = self.activation(vmap)
+        s = a + samplers.gaussian(0, T.nnet.sigmoid(a)) # approximation: linear + gaussian noise
+        return T.max(0, s) # rectify
+        
+    def mean_field(self, vmap):
+        return T.max(0, self.activation(vmap))
 

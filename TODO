@@ -1,13 +1,17 @@
+TODO: test NRELUnits
+
+TODO: exponential units
+    - implement them
+    - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
+
 TODO: make the parameters variable interface a bit more uniform (W.W and bv.b look silly)
 
 TODO: truncated exponential units
     - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
   
-TODO: exponential units
-    - implement them
-    - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
-    
-TODO: ReLU units
+TODO: binomial units (read rate-coded RBMs paper http://www.cs.toronto.edu/~hinton/absps/nips00-ywt.pdf)
+
+TODO: poisson units
     
 TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.
 - currently, Parameters instances specify their energy gradient. This only works when the energy is linear in the Parameters, because then the energy gradients don't depend on other parameters in that case. 
@@ -32,6 +36,10 @@ TODO: Exact partition function calculation
 TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
 
 TODO: two-way factored RBM from http://www.cs.utoronto.ca/~hinton/absps/netflixICML.pdf section 5
+
+- the ICASSP 2010 paper "PHONE RECOGNITION USING RESTRICTED BOLTZMANN MACHINES" by Mohamed & Hinton trains using an unsupervised gradient+unsupervised gradient combination. Try to implement an example using this technique, for example digit classification on MNIST. The idea is to combine the standard CD gradient where the label unit is seen as context, with p(l|v) which can be computed from the p(v,l)'s (since #l is finite and small) which in turn are exp(FE(v,l)).
+    * would be nice to write this as general as possible, so it can work for any RBM with a label unit or a set of label units. Note that summing over the labels can only be done numerically (by enumerating them), it's not doable to integrate them out analytically.
+
 
 TODO: wat glue code om RBMs te stacken in DBNs.
     * is het mogelijk dat units niet dezelfde zijn in RBM1 en RBM2? vb. sigmoidal in de ene, truncated exponential in de volgende of zo? hoe kunnen we eenvoudig specifiëren op welke manier twee RBMs aaneen hangen (met welke units)? Want dat hoeven niet noodzakelijk alle hiddens te zijn.
@@ -116,6 +124,7 @@ Another use case where this would happen is when a variable (f.e. linearly decay
 To support these use cases, it has to be possible to use shared Theano variables as scale factors for ParamUpdaters. (The learning rate is precisely such a scale factor.) This makes it possible to update their values every epoch, or even every training step.
 In fact, generally, it would be cool if any 'metaparameter' could be symbolic.
 Theoretically this should already be possible, but it's a good idea to actually try some of these things and see if anything is still missing to support this.
+    - the ICASSP 2010 paper "PHONE RECOGNITION USING RESTRICTED BOLTZMANN MACHINES" by Mohamed & Hinton does this kind of supervised+unsupervised combination, but in an unusual way. It's worth investigating whether this can be made to fit in the framework.
 
 - mcRBM
   - the deeplearning.net tutorials now include a tutorial for building the HMC sampler that was used for the visibles in this paper, and it looks pretty damn complicated. Don't waste time on this for now. 
