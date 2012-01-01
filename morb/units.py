@@ -93,6 +93,11 @@ class NRELUnits(Units):
     """
     Noisy rectified linear units from 'Rectified Linear Units Improve Restricted Boltzmann Machines'
     by Nair & Hinton (ICML 2010)
+    
+    WARNING: computing the energy or free energy of a configuration does not have the same semantics
+    as usual with NReLUs, because each ReLU is actually the sum of an infinite number of Bernoulli
+    units with offset biases. The energy depends on the individual values of these Bernoulli units,
+    whereas only the sum is ever sampled (approximately).
     """
     def sample(self, vmap):
         a = self.activation(vmap)
