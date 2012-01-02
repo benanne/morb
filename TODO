@@ -1,14 +1,10 @@
 TODO: test NRELUnits
 
-TODO: exponential units
-    - implement them
+TODO: test exponential units
     - with non-truncated exponential units, lambda has to be positive, requires constraint on the parameters.
 
 TODO: make the parameters variable interface a bit more uniform (W.W and bv.b look silly)
-
-TODO: truncated exponential units
-    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
-  
+ 
 TODO: binomial units (read rate-coded RBMs paper http://www.cs.toronto.edu/~hinton/absps/nips00-ywt.pdf)
 
 TODO: poisson units
@@ -63,6 +59,9 @@ TODO: write some proper automated tests
 TODO: add some documentation to the github wiki about how the different classes interact (what are the interfaces) and about the 'linearised RBM' thing
 
 TODO: consider implementing 'factors' as standalone elements. Using the 'message passing' interpretation this might even be easy. And it would make implementing factored Nth order RBMs a breeze (although I'm not sure if that's useful), and allow for 'convolutional factored' models etc.
+
+TODO: truncated exponential units
+    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
     
 TODO: passen autoencoders ook binnen dit raamwerk? mss moeten bepaalde dingen dan hernoemd worden...
 
@@ -130,6 +129,7 @@ Theoretically this should already be possible, but it's a good idea to actually 
   - the deeplearning.net tutorials now include a tutorial for building the HMC sampler that was used for the visibles in this paper, and it looks pretty damn complicated. Don't waste time on this for now. 
   - technically, an mcRBM isn't even an RBM!
   - perhaps the samplers from MonteTheano can be of use?
+  - in 'Learning to represent visual input', Hinton gives a simple 'mean field' rule that also works, try to figure this out and implement it (it might require refactoring of cd_stats to allow 'plugging in' sampling strategies)
 
 - spike and slab RBMs
   - these require a special sampling procedure (in 3 steps instead of 2) and are thus not compatible with cd_stats. It will probably be a challenge to fit these into the framework, if it's possible at all. Maybe abstracting out the sampling procedure from cd_stats is a good starting point? That way, maybe HMC could be used for the mcRBM as well.

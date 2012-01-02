@@ -86,6 +86,17 @@ class TruncatedExponentialUnits(Units):
     def mean_field(self, vmap):
         a = self.activation(vmap)
         return samplers.truncated_exponential_mean(-a)
+
+
+
+class ExponentialUnits(Units):
+    def sample(self, vmap):
+        a = self.activation(vmap)
+        return samplers.exponential(-a) # lambda = -a!
+        
+    def mean_field(self, vmap):
+        a = self.activation(vmap)
+        return 1.0 / (-a)
         
         
 

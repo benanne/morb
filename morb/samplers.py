@@ -33,6 +33,11 @@ def multinomial(a):
     return s.reshape(a.shape) # reshape back to original shape
     
 
+def exponential(a):
+    uniform_samples = theano_rng.uniform(size=a.shape, dtype=theano.config.floatX)
+    return (-1 / a) * T.log(1 - uniform_samples)
+
+
 def truncated_exponential(a, maximum=1.0):
     uniform_samples = theano_rng.uniform(size=a.shape, dtype=theano.config.floatX)
     return (-1 / a) * T.log(1 - uniform_samples*(1 - T.exp(-a * maximum)))
