@@ -8,6 +8,8 @@ TODO: make the parameters variable interface a bit more uniform (W.W and bv.b lo
 TODO: binomial units (read rate-coded RBMs paper http://www.cs.toronto.edu/~hinton/absps/nips00-ywt.pdf)
 
 TODO: poisson units
+
+TODO: clean up namespaces with custom __init__ files, also make sure all submodules of morb are available when morb is imported
     
 TODO: for gaussian units, the energy function is in terms of v/sigma, not v! this is not implemented. Look into this.
 - currently, Parameters instances specify their energy gradient. This only works when the energy is linear in the Parameters, because then the energy gradients don't depend on other parameters in that case. 

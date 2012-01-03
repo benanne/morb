@@ -60,6 +60,9 @@ class LearntPrecisionGaussianUnits(Units):
 # TODO later: gaussian units with custom fixed variance (maybe per-unit). This probably requires two proxies.
 
 class SoftmaxUnits(Units):
+    # 0 = minibatches
+    # 1 = units
+    # 2 = states
     def sample(self, vmap):
         a = self.activation(vmap)
         p = activation_functions.softmax(a)

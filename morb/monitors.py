@@ -6,6 +6,11 @@ def reconstruction_mse(stats, u):
     data = stats['data'][u]
     reconstruction = stats['model'][u]
     return T.mean((data - reconstruction) ** 2)
+    
+def reconstruction_error_rate(stats, u):
+    data = stats['data'][u]
+    reconstruction = stats['model'][u]
+    return T.mean(T.neq(data, reconstruction))
 
 def reconstruction_crossentropy(stats, u):
     data = stats['data'][u]
