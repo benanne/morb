@@ -95,6 +95,8 @@ TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_t
 
 TODO: Look into hessian-free optimisation, maybe that fits in as well? (although I think this is pretty much always supervised?)
 
+TODO: implement other algorithms from "Inductive Principles for RBM Learning" by Marlin et al. (2010)
+
 TODO: deep boltzmann machines?
 
 TODO: rather than implicitly assuming everywhere that a parameters instance with a number of units instances as input ties all those units (bidirectionally), maybe parameters should explicitly define the dependencies they introduce. This allows for dependency checking where necessary (free energy computation would be one use case).
@@ -135,6 +137,9 @@ Theoretically this should already be possible, but it's a good idea to actually 
   - these require a special sampling procedure (in 3 steps instead of 2) and are thus not compatible with cd_stats. It will probably be a challenge to fit these into the framework, if it's possible at all. Maybe abstracting out the sampling procedure from cd_stats is a good starting point? That way, maybe HMC could be used for the mcRBM as well.
   - in this code that was used for the paper: https://bitbucket.org/gdesjardins/ssrbm_utlc/src/d54c0e410964/pssrbm.py
     s and h (the latent variables) are sampled given only v. This means that the dependence between s and h can be ignored for practical purposes, which DOES make it compatible with cd_stats, in theory...
+
+
+- a nice (binary) MNIST alternative: http://www.cs.ubc.ca/~bmarlin/data.shtml
 
 
 *** PRELIMINARY DOCUMENTATION ***
