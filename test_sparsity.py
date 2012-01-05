@@ -58,11 +58,11 @@ sparsity_cost = 0.5
 
 umap = {}
 
-umap[rbm.W.W] = rbm.W.W + eta * updaters.CDUpdater(rbm, rbm.W.W, s) \
-            + eta * sparsity_cost * updaters.SparsityUpdater(rbm, rbm.W.W, sparsity_targets, s)
-umap[rbm.bh.b] = rbm.bh.b + eta * updaters.CDUpdater(rbm, rbm.bh.b, s) \
-             + eta * sparsity_cost * updaters.SparsityUpdater(rbm, rbm.bh.b, sparsity_targets, s)
-umap[rbm.bv.b] = rbm.bv.b + eta * updaters.CDUpdater(rbm, rbm.bv.b, s)
+umap[rbm.W.var] = rbm.W.var + eta * updaters.CDUpdater(rbm, rbm.W.var, s) \
+            + eta * sparsity_cost * updaters.SparsityUpdater(rbm, rbm.W.var, sparsity_targets, s)
+umap[rbm.bh.var] = rbm.bh.var + eta * updaters.CDUpdater(rbm, rbm.bh.var, s) \
+             + eta * sparsity_cost * updaters.SparsityUpdater(rbm, rbm.bh.var, sparsity_targets, s)
+umap[rbm.bv.var] = rbm.bv.var + eta * updaters.CDUpdater(rbm, rbm.bv.var, s)
 
 
 

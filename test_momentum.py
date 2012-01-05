@@ -35,7 +35,7 @@ s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h
 
 umap = {}
 
-for var, shape in zip([rbm.W.W, rbm.bv.b, rbm.bh.b], [(rbm.n_visible, rbm.n_hidden), (rbm.n_visible,), (rbm.n_hidden,)]):
+for var, shape in zip([rbm.W.var, rbm.bv.var, rbm.bh.var], [(rbm.n_visible, rbm.n_hidden), (rbm.n_visible,), (rbm.n_hidden,)]):
     # pu =  0.001 * (param_updaters.CDParamUpdater(params, sc) + 0.02 * param_updaters.DecayParamUpdater(params))
     pu = updaters.CDUpdater(rbm, var, s)
     pu = var + 0.0001 * updaters.MomentumUpdater(pu, 0.9, shape)

@@ -60,9 +60,9 @@ s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h
 
 # We create an updater for each parameter variable.
 # IMPORTANT: the precision parameters must be constrained to be negative.
-# variables = [rbm.Wm.W, rbm.bvm.b, rbm.bh.b, rbm.Wp.W, rbm.bvp.b]
-variables = [rbm.Wm.W, rbm.bvm.b, rbm.bhm.b, rbm.Wp.W, rbm.bvp.b, rbm.bhp.b]
-precision_variables = [rbm.Wp.W, rbm.bvp.b]
+# variables = [rbm.Wm.var, rbm.bvm.var, rbm.bh.var, rbm.Wp.var, rbm.bvp.var]
+variables = [rbm.Wm.var, rbm.bvm.var, rbm.bhm.var, rbm.Wp.var, rbm.bvp.var, rbm.bhp.var]
+precision_variables = [rbm.Wp.var, rbm.bvp.var]
 
 umap = {}
 for var in variables:
