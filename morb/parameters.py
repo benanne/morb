@@ -3,7 +3,8 @@ from morb.base import Parameters
 import theano.tensor as T
 from theano.tensor.nnet import conv
 
-
+from morb.misc import tensordot # better tensordot implementation that can be GPU accelerated
+# tensordot = T.tensordot # use theano implementation
 
 class FixedBiasParameters(Parameters):
     # Bias fixed at -1, which is useful for some energy functions (like Gaussian with fixed variance, Beta)
@@ -70,16 +71,16 @@ class AdvancedProdParameters(Parameters):
         # vd + hd = Wd dimensions.
         # the hiddens and visibles have hd+1 and vd+1 dimensions respectively, because the first dimension
         # is reserved for minibatches!
-        self.terms[self.vu] = lambda vmap: T.tensordot(vmap[self.hu], W, axes=(range(1,self.hd+1),range(self.vd, self.vard)))
-        self.terms[self.hu] = lambda vmap: T.tensordot(vmap[self.vu], W, axes=(range(1,self.vd+1),range(0, self.vd)))
+        self.terms[self.vu] = lambda vmap: tensordot(vmap[self.hu], W, axes=(range(1,self.hd+1),range(self.vd, self.vard)))
+        self.terms[self.hu] = lambda vmap: tensordot(vmap[self.vu], W, axes=(range(1,self.vd+1),range(0, self.vd)))
         
-        self.energy_gradients[self.var] = lambda vmap: T.tensordot(vmap[self.vu], vmap[self.hu], axes=([0],[0]))
+        self.energy_gradients[self.var] = lambda vmap: tensordot(vmap[self.vu], vmap[self.hu], axes=([0],[0]))
         # only sums out the minibatch dimension.
                 
     def energy_term(self, vmap):
-        # v_part = T.tensordot(vmap[self.vu], self.var, axes=(range(1, self.vd+1), range(0, self.vd)))
+        # v_part = tensordot(vmap[self.vu], self.var, axes=(range(1, self.vd+1), range(0, self.vd)))
         v_part = self.terms[self.hu](vmap)
-        neg_energy = T.tensordot(v_part, vmap[self.hu], axes=(range(0, self.hd+1), range(0, self.hd+1)))
+        neg_energy = tensordot(v_part, vmap[self.hu], axes=(range(0, self.hd+1), range(0, self.hd+1)))
         # in this case, we also sum over the minibatches in the 2nd step, hence the ranges are hd+1 long.
         return - neg_energy # don't forget to flip the sign!
 
@@ -97,7 +98,7 @@ class AdvancedBiasParameters(Parameters):
         self.energy_gradients[self.var] = lambda vmap: T.sum(vmap[self.u], axis=0) # sum over minibatch axis
         
     def energy_term(self, vmap):
-        return - T.sum(T.tensordot(vmap[self.u], self.var, axes=(range(1, self.ud+1), range(0, self.ud))), axis=0)
+        return - T.sum(tensordot(vmap[self.u], self.var, axes=(range(1, self.ud+1), range(0, self.ud))), axis=0)
         
 
 class SharedBiasParameters(Parameters):
@@ -123,11 +124,11 @@ class SharedBiasParameters(Parameters):
             
     def energy_term(self, vmap):
         # b_padded = T.shape_padright(self.var, self.sd)
-        # return - T.sum(T.tensordot(vmap[self.u], b_padded, axes=(range(1, self.ud+1), range(0, self.ud))), axis=0)
+        # return - T.sum(tensordot(vmap[self.u], b_padded, axes=(range(1, self.ud+1), range(0, self.ud))), axis=0)
         # this does not work because tensordot cannot handle broadcastable dimensions.
         # instead, the dimensions of b_padded which are broadcastable should be summed out afterwards.
         # this comes down to the same thing. so:
-        t = T.tensordot(vmap[self.u], self.var, axes=(range(1, self.nd+1), range(0, self.nd)))
+        t = tensordot(vmap[self.u], self.var, axes=(range(1, self.nd+1), range(0, self.nd)))
         # now sum t over its trailing shared dimensions, which mimics broadcast + tensordot behaviour.
         axes = range(t.ndim - self.sd, t.ndim)
         t2 = T.sum(t, axis=axes)
@@ -239,16 +240,16 @@ class ThirdOrderParameters(Parameters):
         self.u2 = units_list[2]
         
         def term_u0(vmap):
-            p = T.tensordot(vmap[self.u1], W, axes=([1],[1])) # (mb, u0, u2)
+            p = tensordot(vmap[self.u1], W, axes=([1],[1])) # (mb, u0, u2)
             return T.sum(p * vmap[self.u2].dimshuffle(0, 'x', 1), axis=2) # (mb, u0)
             # cannot use two tensordots here because of the minibatch dimension.
             
         def term_u1(vmap):
-            p = T.tensordot(vmap[self.u0], W, axes=([1],[0])) # (mb, u1, u2)
+            p = tensordot(vmap[self.u0], W, axes=([1],[0])) # (mb, u1, u2)
             return T.sum(p * vmap[self.u2].dimshuffle(0, 'x', 1), axis=2) # (mb, u1)
             
         def term_u2(vmap):
-            p = T.tensordot(vmap[self.u0], W, axes=([1],[0])) # (mb, u1, u2)
+            p = tensordot(vmap[self.u0], W, axes=([1],[0])) # (mb, u1, u2)
             return T.sum(p * vmap[self.u1].dimshuffle(0, 1, 'x'), axis=1) # (mb, u2)
             
         self.terms[self.u0] = term_u0
