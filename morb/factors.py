@@ -1,6 +1,7 @@
 import theano.tensor as T
 from morb.base import Parameters
 
+from operator import mul
 
 # TODO: general 'Factor' implementation that can represent factored parameters by combining other types of 2D parameters. This could be used to implement a factored convolutional RBM or something, or an n-way factored RBM with n >= 2.
 
@@ -17,20 +18,91 @@ class Factor(Parameters):
         # units_list is initially empty, but is expanded later by adding Parameters.
         self.variables = [] # same for variables
         self.params_list = []
-        # TODO: define the terms
-        # TODO: define the energy term
+        self.terms = []
+        self.units_map = {}
         # TODO: define the energy gradients of the respective parameters... hmm.
+    
+    def factor_product_for(self, units, vmap):
+        """
+        The factor product needed to compute the activation of the given Units instance
+        """
+        params = self.units_map[units]
+        return self.factor_product(params, vmap)
+    
+    def factor_product(self, params, vmap):
+        """
+        The factor product needed to compute the activation of the other units
+        tied by Parameters params.
+        """
+        # get all Parameters except for the given instance
+        fp_params_list = list(self.params_list) # make a copy
+        fp_params_list.remove(params) # remove the given instance
         
+        # compute activation terms of the factor
+        activations = [fp_params.terms[self](vmap) for fp_params in fp_params_list]
+
+        # multiply the activation terms
+        return reduce(mul, activations)
+    
+    def update_units_map(self, params):
+        """
+        update the dict that maps units to the parameters that tie them to the factor,
+        for the given Parameters instance params.
+        """
+        # get the params' units_list, remove the factor itself,
+        # raise an error if the factor does not occur in the units_list.
+        if self not in params.units_list:
+            raise RuntimeError("Tried to update Factor units map with a Parameters instance that is not tied to the factor.")
+        ul = list(params.units_list) # copy the list
+        ul.remove(self) # get rid of the Factor itself.
+        for u in ul:
+            self.units_map[u] = params # update the mapping for each tied Units instance.
+    
+    def update_terms(self, params):
+        # add activation terms for the units associated with Parameters instance params
+        ul = list(params.units_list)
+        ul.remove(self)
+        for u in ul:
+            def term(vmap):
+                fp = self.factor_product(params, vmap) # compute factor values
+                fvmap = vmap.copy()
+                fvmap.update({ self: fp }) # insert them in a vmap copy
+                return params.terms[u](fvmap) # pass the copy to the Parameters instance so it can compute its activation
+            self.terms[u] = term
+
+    def update_energy_gradients(self, params):
+        # add energy gradients for the variables associated with Parameters instance params
+        pass # TODO    
+    
+    def energy_term(self, vmap):
+        """
+        The energy term of the factor, which is the product of all activation
+        terms of the factor from the contained Parameters instances.
+        """
+        factor_activations = [params.terms[self](vmap) for params in self.params_list]
+        return T.sum(reduce(mul, factor_activations))
+       
     def add_parameters(self, params):
         """
         This method is called by the Parameters constructor when the 'rbm'
         argument is substituted for a Factor instance.
         """
         self.params_list.append(params)
-        # TODO: update 'variables' and 'units_list' here?
+        self.variables.extend(params.variables)
+        self.units_list.extend(params.units_list)
+        self.update_units_map(params)
+        self.update_terms(params)
+        self.update_energy_gradients(params)
     
     
-    
+# 'products' uit ThirdOrderFactoredParameters zijn eigenlijk de activaties van de 'factor' voor elk van de inkomende Parameters.
+# # subparam.terms[self]
+# hoe ziet een 'term' van de factor er dan uit? Er moet een term zijn voor elke units instantie!
+# term = functino of params and f, linear in f.
+# activation_term berekenen:
+# - eerst de activaties van de factor berekenen, afkomstigvan de ANDERE parameterinstanties
+# - dan deze als de 'waarden' van de factor beschouwen (in een vmap stoppen) en de activatie van de units in zijn respectieve parameters berekenen.
+# er is een datastructuur nodig die units op de respectieve parameters mapt. Hier kan dan ook gedetecteerd worden of er ergens units dubbel gebruikt worden; maar als't context units zijn is dat eigenlijk geen probleem, dus dat moet enkel gedetecteerd kunnen worden, geen warnings of errors nodig.
     
 """
 class ThirdOrderFactoredParameters(Parameters):
