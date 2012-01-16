@@ -33,39 +33,33 @@ class Factor(Parameters):
     
     
 """
-class ThirdOrderParameters(Parameters):
-    def __init__(self, rbm, units_list, W, name=None):
-        super(ThirdOrderParameters, self).__init__(rbm, units_list, name=name)
+class ThirdOrderFactoredParameters(Parameters):
+    \"\"\"
+    Factored 3rd order parameters, connecting three Units instances. Each factored
+    parameter matrix has dimensions (units_size, num_factors).
+    \"\"\"
+    def __init__(self, rbm, units_list, variables, name=None):
+        super(ThirdOrderFactoredParameters, self).__init__(rbm, units_list, name=name)
         assert len(units_list) == 3
-        self.var = W
-        self.variables = [self.var]
+        assert len(variables) == 3
+        self.variables = variables
+        self.var0 = variables[0]
+        self.var1 = variables[1]
+        self.var2 = variables[2]
         self.u0 = units_list[0]
         self.u1 = units_list[1]
         self.u2 = units_list[2]
-        
-        def term_u0(vmap):
-            p = tensordot(vmap[self.u1], W, axes=([1],[1])) # (mb, u0, u2)
-            return T.sum(p * vmap[self.u2].dimshuffle(0, 'x', 1), axis=2) # (mb, u0)
-            # cannot use two tensordots here because of the minibatch dimension.
-            
-        def term_u1(vmap):
-            p = tensordot(vmap[self.u0], W, axes=([1],[0])) # (mb, u1, u2)
-            return T.sum(p * vmap[self.u2].dimshuffle(0, 'x', 1), axis=2) # (mb, u1)
-            
-        def term_u2(vmap):
-            p = tensordot(vmap[self.u0], W, axes=([1],[0])) # (mb, u1, u2)
-            return T.sum(p * vmap[self.u1].dimshuffle(0, 1, 'x'), axis=1) # (mb, u2)
-            
-        self.terms[self.u0] = term_u0
-        self.terms[self.u1] = term_u1
-        self.terms[self.u2] = term_u2
+        self.prod0 = lambda vmap: T.dot(vmap[self.u0], self.var0) # (mb, f)
+        self.prod1 = lambda vmap: T.dot(vmap[self.u1], self.var1) # (mb, f)
+        self.prod2 = lambda vmap: T.dot(vmap[self.u2], self.var2) # (mb, f)
+        self.terms[self.u0] = lambda vmap: T.dot(self.prod1(vmap) * self.prod2(vmap), self.var0.T) # (mb, u0)
+        self.terms[self.u1] = lambda vmap: T.dot(self.prod0(vmap) * self.prod2(vmap), self.var1.T) # (mb, u1)
+        self.terms[self.u2] = lambda vmap: T.dot(self.prod0(vmap) * self.prod1(vmap), self.var2.T) # (mb, u2)
                 
-        def gradient(vmap):
-            p = vmap[self.u0].dimshuffle(0, 1, 'x') * vmap[self.u1].dimshuffle(0, 'x', 1) # (mb, u0, u1)
-            p2 = p.dimshuffle(0, 1, 2, 'x') * vmap[self.u2].dimshuffle(0, 'x', 'x', 1) # (mb, u0, u1, u2)
-            return T.sum(p2, axis=0) # sum out minibatch dimension
-            
-        self.energy_gradients[self.var] = gradient
+        self.energy_gradients[self.var0] = lambda vmap: T.dot(vmap[self.u0].T, self.prod1(vmap) * self.prod2(vmap)) # (u0, f)
+        self.energy_gradients[self.var1] = lambda vmap: T.dot(vmap[self.u1].T, self.prod0(vmap) * self.prod2(vmap)) # (u1, f)
+        self.energy_gradients[self.var2] = lambda vmap: T.dot(vmap[self.u2].T, self.prod0(vmap) * self.prod1(vmap)) # (u2, f)
+        # the T.dot also sums out the minibatch dimension
         
     def energy_term(self, vmap):
         return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1])
