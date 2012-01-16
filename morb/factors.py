@@ -3,11 +3,17 @@ from morb.base import Parameters
 
 from operator import mul
 
-# TODO: general 'Factor' implementation that can represent factored parameters by combining other types of 2D parameters. This could be used to implement a factored convolutional RBM or something, or an n-way factored RBM with n >= 2.
+# general 'Factor' implementation that can represent factored parameters by
+# combining other types of parameters. This could be used to implement a
+# factored convolutional RBM or something, or an n-way factored RBM with n >= 2.
 
-# The idea is that the 'Factor' object acts as an RBM and Units proxy for the contained Parameters, and is used as a Parameters object within the RBM.
+# The idea is that the 'Factor' object acts as an RBM and Units proxy for the
+# contained Parameters, and is used as a Parameters object within the RBM.
 
-# The Parameters contained within the Factor MUST NOT be added to the RBM, because their joint energy term is not linear in each of the individual factored parameter sets (but rather multiplicative). Adding them to the RBM would cause them to contribute an energy term, which doesn't make sense.
+# The Parameters contained within the Factor MUST NOT be added to the RBM,
+# because their joint energy term is not linear in each of the individual
+# factored parameter sets (but rather multiplicative). Adding them to the
+# RBM would cause them to contribute an energy term, which doesn't make sense.
 
 class Factor(Parameters):
     """
@@ -18,9 +24,9 @@ class Factor(Parameters):
         # units_list is initially empty, but is expanded later by adding Parameters.
         self.variables = [] # same for variables
         self.params_list = []
-        self.terms = []
+        self.terms = {}
         self.units_map = {}
-        # TODO: define the energy gradients of the respective parameters... hmm.
+        self.energy_gradients = {}
     
     def factor_product_for(self, units, vmap):
         """
@@ -72,7 +78,13 @@ class Factor(Parameters):
 
     def update_energy_gradients(self, params):
         # add energy gradients for the variables associated with Parameters instance params
-        pass # TODO    
+        for var in params.variables:
+            def grad(vmap):
+                fp = self.factor_product(params, vmap) # compute factor values
+                fvmap = vmap.copy()
+                fvmap.update({ self: fp }) # insert them in a vmap copy
+                return params.energy_gradients[var](fvmap)
+            self.energy_gradients[var] = grad
     
     def energy_term(self, vmap):
         """
