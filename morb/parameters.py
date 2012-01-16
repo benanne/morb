@@ -292,12 +292,29 @@ class ThirdOrderFactoredParameters(Parameters):
         self.terms[self.u0] = lambda vmap: T.dot(self.prod1(vmap) * self.prod2(vmap), self.var0.T) # (mb, u0)
         self.terms[self.u1] = lambda vmap: T.dot(self.prod0(vmap) * self.prod2(vmap), self.var1.T) # (mb, u1)
         self.terms[self.u2] = lambda vmap: T.dot(self.prod0(vmap) * self.prod1(vmap), self.var2.T) # (mb, u2)
-                
-        self.energy_gradients[self.var0] = lambda vmap: T.dot(vmap[self.u0].T, self.prod1(vmap) * self.prod2(vmap)) # (u0, f)
-        self.energy_gradients[self.var1] = lambda vmap: T.dot(vmap[self.u1].T, self.prod0(vmap) * self.prod2(vmap)) # (u1, f)
-        self.energy_gradients[self.var2] = lambda vmap: T.dot(vmap[self.u2].T, self.prod0(vmap) * self.prod1(vmap)) # (u2, f)
-        # the T.dot also sums out the minibatch dimension
         
+        # if the same parameter variable is used multiple times, the energy gradients should be added.
+        # so we need a little bit of trickery here to make this work.
+        energy_gradients_list = [
+            lambda vmap: T.dot(vmap[self.u0].T, self.prod1(vmap) * self.prod2(vmap)), # (u0, f)
+            lambda vmap: T.dot(vmap[self.u1].T, self.prod0(vmap) * self.prod2(vmap)), # (u1, f)
+            lambda vmap: T.dot(vmap[self.u2].T, self.prod0(vmap) * self.prod1(vmap)), # (u2, f)
+        ] # the T.dot also sums out the minibatch dimension
+        
+        energy_gradients_dict = {}
+        for var, grad in zip(self.variables, energy_gradients_list):
+            if var not in energy_gradients_dict:
+                energy_gradients_dict[var] = []
+            energy_gradients_dict[var].append(grad)
+            
+        for var, grad_list in energy_gradients_dict.items():
+            def tmp(): # create a closure, otherwise grad_list will always
+                # refer to the one of the last iteration!
+                # TODO: this is nasty, is there a cleaner way?
+                g = grad_list
+                self.energy_gradients[var] = lambda vmap: sum(f(vmap) for f in g)
+            tmp()
+    
     def energy_term(self, vmap):
         return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1])
         # sum is over the minibatch and the u1 dimension.
