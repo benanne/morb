@@ -15,6 +15,9 @@ from operator import mul
 # factored parameter sets (but rather multiplicative). Adding them to the
 # RBM would cause them to contribute an energy term, which doesn't make sense.
 
+# TODO: an uninitialised factor typically just results in bogus results, it doesn't
+# raise any exceptions. This isn't very clean. Maybe find a way around this.
+
 class Factor(Parameters):
     """
     A 'factor' can be used to construct factored parameters from other
@@ -27,6 +30,11 @@ class Factor(Parameters):
         self.params_list = []
         self.terms = {}
         self.energy_gradients = {} # careful, this is now a dict of LISTS to support parameter tying.
+        self.initialized = False
+        
+    def check_initialized(self):
+        if not self.initialized:
+            raise RuntimeError("Factor '%s' has not been initialized." % self.name)
     
     def factor_product(self, params, vmap):
         """
@@ -59,7 +67,7 @@ class Factor(Parameters):
 
     def update_energy_gradients(self, params):
         """
-        Add energy gradients for the variables associated with Parameters instance params
+        Add/update energy gradients for the variables associated with Parameters instance params
         """
         for var in params.variables:
             def grad(vmap):
@@ -72,7 +80,12 @@ class Factor(Parameters):
                 self.energy_gradients[var] = []
             self.energy_gradients[var].append(grad)
 
+    def activation_term_for(self, units, vmap):
+        self.check_initialized()
+        return self.terms[units](vmap)
+        
     def energy_gradient_for(self, variable, vmap):
+        self.check_initialized()
         return sum(f(vmap) for f in self.energy_gradients[variable]) # sum all contributions
     
     def energy_term(self, vmap):
@@ -80,18 +93,35 @@ class Factor(Parameters):
         The energy term of the factor, which is the product of all activation
         terms of the factor from the contained Parameters instances.
         """
+        self.check_initialized()
         factor_activations = [params.terms[self](vmap) for params in self.params_list]
         return T.sum(reduce(mul, factor_activations))
-       
+    
+    def initialize(self):
+        """
+        Extract Units instances and variables from each contained Parameters
+        instance. Unfortunately there is no easy way to do this automatically
+        when the Parameters instances are created, because the add_parameters
+        method is called before they are fully initialised.
+        """
+        for params in self.params_list:
+            self.variables.extend(params.variables)
+            units_list = list(params.units_list)
+            units_list.remove(self)
+            self.units_list.extend(units_list)
+            self.update_terms(params)
+            self.update_energy_gradients(params)
+            
+        self.initialized = True
+        
     def add_parameters(self, params):
         """
         This method is called by the Parameters constructor when the 'rbm'
         argument is substituted for a Factor instance.
         """
         self.params_list.append(params)
-        self.variables.extend(params.variables)
-        self.units_list.extend(params.units_list)
-        self.update_terms(params)
-        self.update_energy_gradients(params)
-    
+
+    def __repr__(self):
+        units_names = ", ".join(("'%s'" % u.name) for u in self.units_list)
+        return "<morb:Factor '%s' affecting %s>" % (self.name, units_names)
 

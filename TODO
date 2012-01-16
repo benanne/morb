@@ -1,5 +1,4 @@
-TODO: test Factor implementation, compare with ThirdOrderFactoredParameters?
-    - support for parameter tying: instead of overwriting the energy gradient, add them together.
+TODO: test Factor implementation
 
 TODO: test NRELUnits
 
