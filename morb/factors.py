@@ -26,7 +26,7 @@ class Factor(Parameters):
         self.variables = [] # same for variables
         self.params_list = []
         self.terms = {}
-        self.energy_gradients = {}
+        self.energy_gradients = {} # careful, this is now a dict of LISTS to support parameter tying.
     
     def factor_product(self, params, vmap):
         """
@@ -44,8 +44,10 @@ class Factor(Parameters):
         return reduce(mul, activations)
     
     def update_terms(self, params):
-        # add activation terms for the units associated with Parameters instance params
-        ul = list(params.units_list)
+        """
+        Add activation terms for the units associated with Parameters instance params
+        """
+        ul = list(params.units_list) # copy
         ul.remove(self)
         for u in ul:
             def term(vmap):
@@ -56,14 +58,22 @@ class Factor(Parameters):
             self.terms[u] = term
 
     def update_energy_gradients(self, params):
-        # add energy gradients for the variables associated with Parameters instance params
+        """
+        Add energy gradients for the variables associated with Parameters instance params
+        """
         for var in params.variables:
             def grad(vmap):
                 fp = self.factor_product(params, vmap) # compute factor values
                 fvmap = vmap.copy()
                 fvmap.update({ self: fp }) # insert them in a vmap copy
                 return params.energy_gradients[var](fvmap)
-            self.energy_gradients[var] = grad
+           
+            if var not in self.energy_gradients:
+                self.energy_gradients[var] = []
+            self.energy_gradients[var].append(grad)
+
+    def energy_gradient_for(self, variable, vmap):
+        return sum(f(vmap) for f in self.energy_gradients[variable]) # sum all contributions
     
     def energy_term(self, vmap):
         """
