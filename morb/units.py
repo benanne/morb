@@ -6,7 +6,8 @@ import theano.tensor as T
 class BinaryUnits(Units):
     def sample(self, vmap):
         a = self.activation(vmap)
-        return samplers.bernoulli(a)
+        p = activation_functions.sigmoid(a)
+        return samplers.bernoulli(p)
         
     def mean_field(self, vmap):
         a = self.activation(vmap)
