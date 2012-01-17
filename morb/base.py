@@ -21,15 +21,24 @@ class Units(object):
         terms = [param.activation_term_for(self, vmap) for param in self.rbm.params_affecting(self)]
         # the linear activation is the sum of the activations for each of the parameters.
         return sum(terms)
-            
-    def sample(self, vmap):
+        
+    def sample_from_activation(self, a):
         raise NotImplementedError("Sampling not supported for this Units instance: %s" % repr(self))
         
-    def mean_field(self, vmap):
+    def mean_field_from_activation(self, a):
         raise NotImplementedError("Mean field not supported for this Units instance: %s" % repr(self))
         
-    def free_energy_term(self, vmap):
+    def free_energy_term_from_activation(self, a):
         raise NotImplementedError("Free energy calculation not supported for this Units instance: %s" % repr(self))
+            
+    def sample(self, vmap):
+        return self.sample_from_activation(self.activation(vmap))
+        
+    def mean_field(self, vmap):
+        return self.mean_field_from_activation(self.activation(vmap))
+        
+    def free_energy_term(self, vmap):
+        return self.free_energy_term_from_activation(self.activation(vmap))
         
     def __repr__(self):
         return "<morb:Units '%s'>" % self.name

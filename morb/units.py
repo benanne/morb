@@ -4,17 +4,15 @@ import theano.tensor as T
 
 
 class BinaryUnits(Units):
-    def sample(self, vmap):
-        a = self.activation(vmap)
+    def sample_from_activation(self, a):
         return samplers.bernoulli(a)
         
-    def mean_field(self, vmap):
-        a = self.activation(vmap)
+    def mean_field_from_activation(self, a):
         return activation_functions.sigmoid(a)
 
-    def free_energy_term(self, vmap):
+    def free_energy_term_from_activation(self, a):
         # softplus of unit activations, summed over # units
-        s = - T.nnet.softplus(self.activation(vmap))
+        s = - T.nnet.softplus(a)
         # sum over all but the minibatch dimension
         return T.sum(s, axis=range(1, s.ndim))
   
@@ -30,12 +28,10 @@ class GaussianUnits(Units):
         proxy_name = (name + "_precision" if name is not None else None)
         self.precision_units = GaussianPrecisionProxyUnits(rbm, self, name=proxy_name)
 
-    def sample(self, vmap):
-        a = self.activation(vmap)
+    def sample_from_activation(self, a):
         return samplers.gaussian(a)
         
-    def mean_field(self, vmap):
-        a = self.activation(vmap)
+    def mean_field_from_activation(self, a):
         return a
 
 
@@ -51,10 +47,14 @@ class LearntPrecisionGaussianUnits(Units):
         self.precision_units = LearntPrecisionGaussianProxyUnits(rbm, self, name=proxy_name)
         self.proxy_units = [self.precision_units]
 
+    def sample_from_activation(self, a1, a2):
+        return samplers.gaussian(a1/(-2*a2), 1/(-2*a2))
+        
     def sample(self, vmap):
         a1 = self.activation(vmap)
         a2 = self.precision_units.activation(vmap)
-        return samplers.gaussian(a1/(-2*a2), 1/(-2*a2))
+        return self.sample_from_activation(a1, a2)
+        
         
        
 # TODO later: gaussian units with custom fixed variance (maybe per-unit). This probably requires two proxies.
@@ -63,8 +63,7 @@ class SoftmaxUnits(Units):
     # 0 = minibatches
     # 1 = units
     # 2 = states
-    def sample(self, vmap):
-        a = self.activation(vmap)
+    def sample_from_activation(self, a):
         p = activation_functions.softmax(a)
         return samplers.multinomial(p)
 
@@ -73,8 +72,7 @@ class SoftmaxWithZeroUnits(Units):
     """
     Like SoftmaxUnits, but in this case a zero state is possible, yielding N+1 possible states in total.
     """
-    def sample(self, vmap):
-        a = self.activation(vmap)
+    def sample_from_activation(self, a):
         p0 = activation_functions.softmax_with_zero(a)
         s0 = samplers.multinomial(p0)
         s = s0[:, :, :-1] # chop off the last state (zero state)
@@ -82,23 +80,19 @@ class SoftmaxWithZeroUnits(Units):
 
 
 class TruncatedExponentialUnits(Units):
-    def sample(self, vmap):
-        a = self.activation(vmap)
+    def sample_from_activation(self, a):
         return samplers.truncated_exponential(-a) # lambda = -a!
         
-    def mean_field(self, vmap):
-        a = self.activation(vmap)
+    def mean_field_from_activation(self, a):
         return samplers.truncated_exponential_mean(-a)
 
 
 
 class ExponentialUnits(Units):
-    def sample(self, vmap):
-        a = self.activation(vmap)
+    def sample_from_activation(self, a):
         return samplers.exponential(-a) # lambda = -a!
         
-    def mean_field(self, vmap):
-        a = self.activation(vmap)
+    def mean_field_from_activation(self, a):
         return 1.0 / (-a)
         
         
@@ -113,11 +107,10 @@ class NRELUnits(Units):
     units with offset biases. The energy depends on the individual values of these Bernoulli units,
     whereas only the sum is ever sampled (approximately).
     """
-    def sample(self, vmap):
-        a = self.activation(vmap)
+    def sample_from_activation(self, a):
         s = a + samplers.gaussian(0, T.nnet.sigmoid(a)) # approximation: linear + gaussian noise
         return T.max(0, s) # rectify
         
-    def mean_field(self, vmap):
-        return T.max(0, self.activation(vmap))
+    def mean_field_from_activation(self, a):
+        return T.max(0, a)
 
