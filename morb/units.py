@@ -107,6 +107,8 @@ class NRELUnits(Units):
     as usual with NReLUs, because each ReLU is actually the sum of an infinite number of Bernoulli
     units with offset biases. The energy depends on the individual values of these Bernoulli units,
     whereas only the sum is ever sampled (approximately).
+    
+    See: http://metaoptimize.com/qa/questions/8524/energy-function-of-an-rbm-with-noisy-rectified-linear-units-nrelus
     """
     def sample_from_activation(self, a):
         s = a + samplers.gaussian(0, T.nnet.sigmoid(a)) # approximation: linear + gaussian noise
@@ -114,4 +116,7 @@ class NRELUnits(Units):
         
     def mean_field_from_activation(self, a):
         return T.max(0, a)
+    
+        
+
 

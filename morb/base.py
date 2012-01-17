@@ -230,6 +230,9 @@ class RBM(object):
     def add_units(self, units):
         self.units_list.append(units)
         
+    def remove_units(self, units):
+        self.units_list.remove(units)
+        
     def add_parameters(self, params):
         self.params_list.append(params)
         
