@@ -22,23 +22,23 @@ class Units(object):
         # the linear activation is the sum of the activations for each of the parameters.
         return sum(terms)
         
-    def sample_from_activation(self, a):
+    def sample_from_activation(self, vmap):
         raise NotImplementedError("Sampling not supported for this Units instance: %s" % repr(self))
         
-    def mean_field_from_activation(self, a):
+    def mean_field_from_activation(self, vmap):
         raise NotImplementedError("Mean field not supported for this Units instance: %s" % repr(self))
         
-    def free_energy_term_from_activation(self, a):
+    def free_energy_term_from_activation(self, vmap):
         raise NotImplementedError("Free energy calculation not supported for this Units instance: %s" % repr(self))
             
     def sample(self, vmap):
-        return self.sample_from_activation(self.activation(vmap))
+        return self.sample_from_activation({ self: self.activation(vmap) })
         
     def mean_field(self, vmap):
-        return self.mean_field_from_activation(self.activation(vmap))
+        return self.mean_field_from_activation({ self: self.activation(vmap) })
         
     def free_energy_term(self, vmap):
-        return self.free_energy_term_from_activation(self.activation(vmap))
+        return self.free_energy_term_from_activation({ self: self.activation(vmap) })
         
     def __repr__(self):
         return "<morb:Units '%s'>" % self.name
@@ -53,6 +53,10 @@ class ProxyUnits(Units):
         
     def sample(self, vmap):
         s = self.units.sample(vmap)
+        return self.func(s)
+        
+    def sample_from_activation(self, vmap):
+        s = self.units.sample_from_activation(vmap)
         return self.func(s)
         
         
@@ -289,27 +293,6 @@ class RBM(object):
         # the energy is the sum of the energy terms for each of the parameters.
         return sum(terms)
         
-    def free_energy(self, units_list, vmap):
-        """
-        Calculates the free energy with respect to the units given in units_list.
-        This has to be a list of Units instances that are independent of eachother
-        given the other units, and each of them has to have a free_energy_term.
-        """
-        
-        # first, get the terms of the energy that don't involve any of the given units. These terms are unchanged.
-        unchanged_terms = []
-        for params in self.params_list:
-            if not any(params.affects(u) for u in units_list):
-                # if none of the given Units instances are affected by the current Parameters instance,
-                # this term is unchanged (it's the same as in the energy function)
-                unchanged_terms.append(params.energy_term(vmap))
-
-        # all other terms are affected by the summing out of the units.        
-        affected_terms = [u.free_energy_term(vmap) for u in units_list]
-        
-        # note that this separation breaks down if there are dependencies between the Units instances given.
-        return sum(unchanged_terms + affected_terms)
-        
     def complete_units_list_split(self, units_list):
         """
         Returns two lists: one with basic units and one with proxy units.
@@ -353,16 +336,16 @@ class RBM(object):
             vmap[p] = p.func(vmap[p.units])
             
         return vmap
-        
-    def sample(self, units_list, vmap):
+    
+    def sample_from_activation(self, vmap):
         """
         This method allows to sample a given set of Units instances at the same time and enforces consistency.
         say v is a Units instance, and x is a ProxyUnits instance tied to v. Then the following:
-        vs = v.sample(vmap)
-        xs = x.sample(vmap)
+        vs = v.sample_from_activation(a1)
+        xs = x.sample_from_activation(a2)
         ...will yield inconsistent samples (i.e. xs != func(vs)). This is undesirable in CD, for example.
         To remedy this, only the 'basic' units are sampled, and the values of the proxy units are computed.
-        All proxies are always included in the returned vmap.
+        The supplied activation_map is assumed to be complete.
         """
         # This code does not support proxies of proxies.
         # If this should be supported, this code should be rethought.
@@ -373,23 +356,72 @@ class RBM(object):
         # note that this completion comes at almost no extra cost: the expressions
         # are added to the resulting dictionary, but that doesn't mean they'll
         # necessarily be used (and thus, compiled).
+        units_list = vmap.keys()
         basic_units, proxy_units = self.complete_units_list_split(units_list)
                 
         # sample all basic units
         samples = {}
         for u in basic_units:
-            samples[u] = u.sample(vmap)
+            samples[u] = u.sample_from_activation(vmap)
             
         # compute all proxy units
         for u in proxy_units:
             samples[u] = u.func(samples[u.units])
         
         return samples
-        
-    def mean_field(self, units_list, vmap):
+    
+    def sample(self, units_list, vmap):
+        """
+        This method allows to sample a given set of Units instances at the same time and enforces consistency.
+        say v is a Units instance, and x is a ProxyUnits instance tied to v. Then the following:
+        vs = v.sample(vmap)
+        xs = x.sample(vmap)
+        ...will yield inconsistent samples (i.e. xs != func(vs)). This is undesirable in CD, for example.
+        To remedy this, only the 'basic' units are sampled, and the values of the proxy units are computed.
+        All proxies are always included in the returned vmap.
+        """
+        activations_vmap = self.activations(units_list, vmap)
+        return self.sample_from_activation(activations_vmap)
+    
+    def mean_field_from_activation(self, vmap):
+        units_list = vmap.keys()
         units_list = self.complete_units_list(units_list)
         # no consistency need be enforced when using mean field.
-        return dict((u, u.mean_field(vmap)) for u in units_list)
+        return dict((u, u.mean_field_from_activation(vmap)) for u in units_list)
+    
+    def mean_field(self, units_list, vmap):
+        activations_vmap = self.activations(units_list, vmap)
+        return self.mean_field_from_activation(activations_vmap)
+        
+    # TODO: free energy from activation.
+    # issue: let's say we're working with temperatures. How does this affect
+    # the free energy function?
+            
+    def free_energy(self, units_list, vmap):
+        """
+        Calculates the free energy, integrating out the units given in units_list.
+        This has to be a list of Units instances that are independent of eachother
+        given the other units, and each of them has to have a free_energy_term.
+        """
+        
+        # first, get the terms of the energy that don't involve any of the given units. These terms are unchanged.
+        unchanged_terms = []
+        for params in self.params_list:
+            if not any(params.affects(u) for u in units_list):
+                # if none of the given Units instances are affected by the current Parameters instance,
+                # this term is unchanged (it's the same as in the energy function)
+                unchanged_terms.append(params.energy_term(vmap))
+
+        # all other terms are affected by the summing out of the units.        
+        affected_terms = [u.free_energy_term(vmap) for u in units_list]
+        
+        # note that this separation breaks down if there are dependencies between the Units instances given.
+        return sum(unchanged_terms + affected_terms)
+        
+    def activations(self, units_list, vmap):
+        units_list = self.complete_units_list(units_list)
+        # no consistency need be enforced when computing activations.
+        return dict((u, u.activation(vmap)) for u in units_list)
 
     def __repr__(self):
         units_names = ", ".join(("'%s'" % u.name) for u in self.units_list)

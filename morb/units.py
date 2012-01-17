@@ -4,16 +4,16 @@ import theano.tensor as T
 
 
 class BinaryUnits(Units):
-    def sample_from_activation(self, a):
-        p = activation_functions.sigmoid(a)
+    def sample_from_activation(self, vmap):
+        p = activation_functions.sigmoid(vmap[self])
         return samplers.bernoulli(p)
         
-    def mean_field_from_activation(self, a):
-        return activation_functions.sigmoid(a)
+    def mean_field_from_activation(self, vmap):
+        return activation_functions.sigmoid(vmap[self])
 
-    def free_energy_term_from_activation(self, a):
+    def free_energy_term_from_activation(self, vmap):
         # softplus of unit activations, summed over # units
-        s = - T.nnet.softplus(a)
+        s = - T.nnet.softplus(vmap[self])
         # sum over all but the minibatch dimension
         return T.sum(s, axis=range(1, s.ndim))
   
@@ -29,8 +29,8 @@ class GaussianUnits(Units):
         proxy_name = (name + "_precision" if name is not None else None)
         self.precision_units = GaussianPrecisionProxyUnits(rbm, self, name=proxy_name)
 
-    def sample_from_activation(self, a):
-        return samplers.gaussian(a)
+    def sample_from_activation(self, vmap):
+        return samplers.gaussian(vmap[self])
         
     def mean_field_from_activation(self, a):
         return a
@@ -48,13 +48,15 @@ class LearntPrecisionGaussianUnits(Units):
         self.precision_units = LearntPrecisionGaussianProxyUnits(rbm, self, name=proxy_name)
         self.proxy_units = [self.precision_units]
 
-    def sample_from_activation(self, a1, a2):
+    def sample_from_activation(self, vmap):
+        a1 = vmap[self]
+        a2 = vmap[self.precision_units]
         return samplers.gaussian(a1/(-2*a2), 1/(-2*a2))
         
     def sample(self, vmap):
         a1 = self.activation(vmap)
         a2 = self.precision_units.activation(vmap)
-        return self.sample_from_activation(a1, a2)
+        return self.sample_from_activation({ self: a1, self.precision_units: a2 })
         
         
        
@@ -64,8 +66,8 @@ class SoftmaxUnits(Units):
     # 0 = minibatches
     # 1 = units
     # 2 = states
-    def sample_from_activation(self, a):
-        p = activation_functions.softmax(a)
+    def sample_from_activation(self, vmap):
+        p = activation_functions.softmax(vmap[self])
         return samplers.multinomial(p)
 
 
@@ -73,28 +75,28 @@ class SoftmaxWithZeroUnits(Units):
     """
     Like SoftmaxUnits, but in this case a zero state is possible, yielding N+1 possible states in total.
     """
-    def sample_from_activation(self, a):
-        p0 = activation_functions.softmax_with_zero(a)
+    def sample_from_activation(self, vmap):
+        p0 = activation_functions.softmax_with_zero(vmap[self])
         s0 = samplers.multinomial(p0)
         s = s0[:, :, :-1] # chop off the last state (zero state)
         return s
 
 
 class TruncatedExponentialUnits(Units):
-    def sample_from_activation(self, a):
-        return samplers.truncated_exponential(-a) # lambda = -a!
+    def sample_from_activation(self, vmap):
+        return samplers.truncated_exponential(-vmap[self]) # lambda = -activation!
         
-    def mean_field_from_activation(self, a):
-        return samplers.truncated_exponential_mean(-a)
+    def mean_field_from_activation(self, vmap):
+        return samplers.truncated_exponential_mean(-vmap[self])
 
 
 
 class ExponentialUnits(Units):
-    def sample_from_activation(self, a):
-        return samplers.exponential(-a) # lambda = -a!
+    def sample_from_activation(self, vmap):
+        return samplers.exponential(-vmap[self]) # lambda = -activation!
         
-    def mean_field_from_activation(self, a):
-        return 1.0 / (-a)
+    def mean_field_from_activation(self, vmap):
+        return 1.0 / (-vmap[self])
         
         
 
@@ -110,12 +112,12 @@ class NRELUnits(Units):
     
     See: http://metaoptimize.com/qa/questions/8524/energy-function-of-an-rbm-with-noisy-rectified-linear-units-nrelus
     """
-    def sample_from_activation(self, a):
-        s = a + samplers.gaussian(0, T.nnet.sigmoid(a)) # approximation: linear + gaussian noise
+    def sample_from_activation(self, vmap):
+        s = a + samplers.gaussian(0, T.nnet.sigmoid(vmap[self])) # approximation: linear + gaussian noise
         return T.max(0, s) # rectify
         
-    def mean_field_from_activation(self, a):
-        return T.max(0, a)
+    def mean_field_from_activation(self, vmap):
+        return T.max(0, vmap[self])
     
         
 
