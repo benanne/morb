@@ -5,7 +5,8 @@ import theano.tensor as T
 
 class BinaryUnits(Units):
     def sample_from_activation(self, a):
-        return samplers.bernoulli(a)
+        p = activation_functions.sigmoid(a)
+        return samplers.bernoulli(p)
         
     def mean_field_from_activation(self, a):
         return activation_functions.sigmoid(a)
