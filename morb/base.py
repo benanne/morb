@@ -287,11 +287,13 @@ class RBM(object):
         sums the gradient contributions of all Parameters instances for the given variable.
         """
         return sum(p.energy_gradient_for(variable, vmap) for p in self.params_list if variable in p.variables)
+    
+    def energy_terms(self, vmap):
+        return [params.energy_term(vmap) for params in self.params_list]
         
     def energy(self, vmap):
-        terms = [params.energy_term(vmap) for params in self.params_list]
         # the energy is the sum of the energy terms for each of the parameters.
-        return sum(terms)
+        return sum(self.energy_terms(vmap))
         
     def complete_units_list_split(self, units_list):
         """
@@ -393,9 +395,30 @@ class RBM(object):
         activations_vmap = self.activations(units_list, vmap)
         return self.mean_field_from_activation(activations_vmap)
         
-    # TODO: free energy from activation.
-    # issue: let's say we're working with temperatures. How does this affect
-    # the free energy function?
+    # TODO: free energy from activations and unchanged terms
+    
+    def free_energy_unchanged_terms(self, units_list, vmap):
+        """
+        The terms of the energy that don't involve any of the given units.
+        These terms are unchanged when computing the free energy, where
+        the given units are integrated out.
+        """
+        unchanged_terms = []
+        for params in self.params_list:
+            if not any(params.affects(u) for u in units_list):
+                # if none of the given Units instances are affected by the current Parameters instance,
+                # this term is unchanged (it's the same as in the energy function)
+                unchanged_terms.append(params.energy_term(vmap))
+        
+        return unchanged_terms
+        
+    def free_energy_affected_terms(self, units_list, vmap):
+        """
+        The terms of the energy that involve the units given in units_list are
+        of course affected when these units are integrated out. This method
+        gives the 'integrated' terms.
+        """
+        return [u.free_energy_term(vmap) for u in units_list]
             
     def free_energy(self, units_list, vmap):
         """
@@ -403,18 +426,10 @@ class RBM(object):
         This has to be a list of Units instances that are independent of eachother
         given the other units, and each of them has to have a free_energy_term.
         """
-        
         # first, get the terms of the energy that don't involve any of the given units. These terms are unchanged.
-        unchanged_terms = []
-        for params in self.params_list:
-            if not any(params.affects(u) for u in units_list):
-                # if none of the given Units instances are affected by the current Parameters instance,
-                # this term is unchanged (it's the same as in the energy function)
-                unchanged_terms.append(params.energy_term(vmap))
-
+        unchanged_terms = self.free_energy_unchanged_terms(units_list, vmap)
         # all other terms are affected by the summing out of the units.        
-        affected_terms = [u.free_energy_term(vmap) for u in units_list]
-        
+        affected_terms = self.free_energy_affected_terms(units_list, vmap)    
         # note that this separation breaks down if there are dependencies between the Units instances given.
         return sum(unchanged_terms + affected_terms)
         
