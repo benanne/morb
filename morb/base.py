@@ -395,8 +395,6 @@ class RBM(object):
         activations_vmap = self.activations(units_list, vmap)
         return self.mean_field_from_activation(activations_vmap)
         
-    # TODO: free energy from activations and unchanged terms
-    
     def free_energy_unchanged_terms(self, units_list, vmap):
         """
         The terms of the energy that don't involve any of the given units.
@@ -412,13 +410,20 @@ class RBM(object):
         
         return unchanged_terms
         
+    def free_energy_affected_terms_from_activation(self, vmap):
+        """
+        For each Units instance in the activation vmap, the corresponding free energy
+        term is returned.
+        """
+        return dict((u, u.free_energy_term_from_activation(vmap)) for u in vmap)
+
     def free_energy_affected_terms(self, units_list, vmap):
         """
         The terms of the energy that involve the units given in units_list are
         of course affected when these units are integrated out. This method
         gives the 'integrated' terms.
         """
-        return [u.free_energy_term(vmap) for u in units_list]
+        return dict((u, u.free_energy_term(vmap)) for u in units_list)
             
     def free_energy(self, units_list, vmap):
         """
@@ -429,7 +434,7 @@ class RBM(object):
         # first, get the terms of the energy that don't involve any of the given units. These terms are unchanged.
         unchanged_terms = self.free_energy_unchanged_terms(units_list, vmap)
         # all other terms are affected by the summing out of the units.        
-        affected_terms = self.free_energy_affected_terms(units_list, vmap)    
+        affected_terms = self.free_energy_affected_terms(units_list, vmap).values()  
         # note that this separation breaks down if there are dependencies between the Units instances given.
         return sum(unchanged_terms + affected_terms)
         
