@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.ion()
 
-from test_utils import generate_data, get_context
+from utils import generate_data, get_context
 
 # DEBUGGING
 

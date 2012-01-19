@@ -11,7 +11,7 @@ import gzip, cPickle
 import matplotlib.pyplot as plt
 plt.ion()
 
-from test_utils import generate_data, get_context
+from utils import generate_data, get_context
 
 # DEBUGGING
 
@@ -39,38 +39,25 @@ valid_set_x = valid_set_x[:1000]
 
 
 n_visible = train_set_x.shape[1]
-# n_hidden = 100 # 500
-n_hidden_mean = 100
-n_hidden_precision = 100
+n_hidden = 100 # 500
 mb_size = 20
 k = 1 # 15
-learning_rate = 0.01 # 0.1
-epochs = 2000
+learning_rate = 0.02 # 0.1
+epochs = 15
 
 
 print ">> Constructing RBM..."
-# rbm = rbms.LearntPrecisionGaussianBinaryRBM(n_visible, n_hidden)
-rbm = rbms.LearntPrecisionSeparateGaussianBinaryRBM(n_visible, n_hidden_mean, n_hidden_precision)
+rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD stats
 print ">> Constructing contrastive divergence updaters..."
-# s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k)
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.hp, rbm.hm], k=k)
-
-# We create an updater for each parameter variable.
-# IMPORTANT: the precision parameters must be constrained to be negative.
-# variables = [rbm.Wm.var, rbm.bvm.var, rbm.bh.var, rbm.Wp.var, rbm.bvp.var]
-variables = [rbm.Wm.var, rbm.bvm.var, rbm.bhm.var, rbm.Wp.var, rbm.bvp.var, rbm.bhp.var]
-precision_variables = [rbm.Wp.var, rbm.bvp.var]
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
 
 umap = {}
-for var in variables:
-    pu = var + (learning_rate/mb_size) * updaters.CDUpdater(rbm, var, s) # the learning rate is 0.001
-    if var in precision_variables:
-        pu = updaters.BoundUpdater(pu, bound=0, type='upper')
+for var in rbm.variables:
+    pu = var + (learning_rate / float(mb_size)) * updaters.CDUpdater(rbm, var, s)
     umap[var] = pu
-    
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)
@@ -172,13 +159,11 @@ for epoch in range(epochs):
     # plot some samples
     plt.figure(2)
     plt.clf()
-    plt.imshow(vdata[0][0].reshape((28, 28)), vmin=0, vmax=1)
-    plt.colorbar()
+    plt.imshow(vdata[0][0].reshape((28, 28)))
     plt.draw()
     plt.figure(3)
     plt.clf()
-    plt.imshow(vmodel[0][0].reshape((28, 28)), vmin=0, vmax=1)
-    plt.colorbar()
+    plt.imshow(vmodel[0][0].reshape((28, 28)))
     plt.draw()
 
     

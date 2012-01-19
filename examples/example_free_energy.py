@@ -10,7 +10,7 @@ import time
 import matplotlib.pyplot as plt
 plt.ion()
 
-from test_utils import generate_data, get_context
+from utils import generate_data, get_context
 
 
 # DEBUGGING
@@ -31,8 +31,8 @@ rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # We use single-step contrastive divergence (CD-1) to train the RBM. For this, we can use
-# the CDUpdater. This requires symbolic CD-1 statistics:
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1, mean_field_for_gibbs=[rbm.v], mean_field_for_stats=[rbm.v, rbm.h])
+# the CDParamUpdater. This requires symbolic CD-1 statistics:
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1)
 
 # We create an updater for each parameter variable
 umap = {}
@@ -43,14 +43,16 @@ for var in rbm.variables:
 # training
 t = trainers.MinibatchTrainer(rbm, umap)
 mse = monitors.reconstruction_mse(s, rbm.v)
-train = t.compile_function(initial_vmap, mb_size=32, monitors=[mse], name='train', mode=mode)
+free_energy = T.mean(rbm.free_energy([rbm.h], s['data'])) # take the mean over the minibatch.
+train = t.compile_function(initial_vmap, mb_size=32, monitors=[mse, free_energy], name='train', mode=mode)
 
 epochs = 50
 
 start_time = time.time()
 for epoch in range(epochs):
     print "Epoch %d" % epoch
-    costs = [m for m in train({ rbm.v: data })]
-    print "MSE = %.4f" % np.mean(costs)
+    costs = [(m, f) for m, f in train({ rbm.v: data })]
+    mses, free_energies = zip(*costs)
+    print "MSE = %.4f, avg free energy = %.2f" % (np.mean(mses), np.mean(free_energies))
 
 print "Took %.2f seconds" % (time.time() - start_time)

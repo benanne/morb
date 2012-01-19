@@ -1,17 +1,17 @@
 import morb
-from morb import rbms, stats, updaters, trainers, monitors
+from morb import rbms, stats, updaters, trainers, monitors, units, parameters
 
 import theano
 import theano.tensor as T
 
 import numpy as np
 
-import gzip, cPickle
+import gzip, cPickle, time
 
 import matplotlib.pyplot as plt
 plt.ion()
 
-from test_utils import generate_data, get_context
+from utils import generate_data, get_context
 
 # DEBUGGING
 
@@ -34,31 +34,78 @@ test_set_x, test_set_y = test_set
 
 
 # TODO DEBUG
-# train_set_x = train_set_x[:10000]
+train_set_x = train_set_x[:10000]
 valid_set_x = valid_set_x[:1000]
 
 
-n_visible = train_set_x.shape[1]
-n_hidden = 500
-mb_size = 20
-k = 15
-learning_rate = 0.1
-epochs = 15
+# reshape data for convolutional RBM
+train_set_x = train_set_x.reshape((train_set_x.shape[0], 1, 28, 28))
+valid_set_x = valid_set_x.reshape((valid_set_x.shape[0], 1, 28, 28))
+test_set_x = test_set_x.reshape((test_set_x.shape[0], 1, 28, 28))
+
+
+
+visible_maps = 1
+hidden_maps = 50 # 100 # 50
+filter_height = 28 # 8
+filter_width = 28 # 8
+mb_size = 10 # 1
+
 
 
 print ">> Constructing RBM..."
-rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
-initial_vmap = { rbm.v: T.matrix('v') }
+fan_in = visible_maps * filter_height * filter_width
 
-persistent_vmap = { rbm.h: theano.shared(np.zeros((mb_size, n_hidden), dtype=theano.config.floatX)) }
+"""
+initial_W = numpy.asarray(
+            self.numpy_rng.uniform(
+                low = - numpy.sqrt(3./fan_in),
+                high = numpy.sqrt(3./fan_in),
+                size = self.filter_shape
+            ), dtype=theano.config.floatX)
+"""
+numpy_rng = np.random.RandomState(123)
+initial_W = np.asarray(
+            numpy_rng.normal(
+                0, 0.5 / np.sqrt(fan_in),
+                size = (hidden_maps, visible_maps, filter_height, filter_width)
+            ), dtype=theano.config.floatX)
+initial_bv = np.zeros(visible_maps, dtype = theano.config.floatX)
+initial_bh = np.zeros(hidden_maps, dtype = theano.config.floatX)
 
-# try to calculate weight updates using CD stats
+
+
+shape_info = {
+  'hidden_maps': hidden_maps,
+  'visible_maps': visible_maps,
+  'filter_height': filter_height,
+  'filter_width': filter_width,
+  'visible_height': 28,
+  'visible_width': 28,
+  'mb_size': mb_size
+}
+
+# shape_info = None
+
+
+# rbms.SigmoidBinaryRBM(n_visible, n_hidden)
+rbm = morb.base.RBM()
+rbm.v = units.BinaryUnits(rbm, name='v') # visibles
+rbm.h = units.BinaryUnits(rbm, name='h') # hiddens
+rbm.W = parameters.Convolutional2DParameters(rbm, [rbm.v, rbm.h], theano.shared(value=initial_W, name='W'), name='W', shape_info=shape_info)
+# one bias per map (so shared across width and height):
+rbm.bv = parameters.SharedBiasParameters(rbm, rbm.v, 3, 2, theano.shared(value=initial_bv, name='bv'), name='bv')
+rbm.bh = parameters.SharedBiasParameters(rbm, rbm.h, 3, 2, theano.shared(value=initial_bh, name='bh'), name='bh')
+
+initial_vmap = { rbm.v: T.tensor4('v') }
+
+# try to calculate weight updates using CD-1 stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k, persistent_vmap=persistent_vmap, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
 
 umap = {}
 for var in rbm.variables:
-    pu = var + (learning_rate / float(mb_size)) * updaters.CDUpdater(rbm, var, s)
+    pu =  var + 0.001 * updaters.CDUpdater(rbm, var, s)
     umap[var] = pu
 
 print ">> Compiling functions..."
@@ -68,6 +115,7 @@ m_data = s['data'][rbm.v]
 m_model = s['model'][rbm.v]
 e_data = rbm.energy(s['data'])
 e_model = rbm.energy(s['model'])
+
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, e_data, e_model], name='train', mode=mode)
@@ -110,6 +158,7 @@ def sample_evolution(start, ns=100): # start = start data
 
 # TRAINING 
 
+epochs = 200
 print ">> Training for %d epochs..." % epochs
 
 mses_train_so_far = []
@@ -118,6 +167,8 @@ edata_train_so_far = []
 emodel_train_so_far = []
 edata_so_far = []
 emodel_so_far = []
+
+start_time = time.time()
 
 for epoch in range(epochs):
     monitoring_data_train = [(cost, energy_data, energy_model) for cost, energy_data, energy_model in train({ rbm.v: train_set_x })]
@@ -172,6 +223,7 @@ for epoch in range(epochs):
     print "Epoch %d" % epoch
     print "training set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_train, edata_train, emodel_train)
     print "validation set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_valid, edata_valid, emodel_valid)
+    print "Time: %.2f s" % (time.time() - start_time)
 
 
 

@@ -1,5 +1,5 @@
 import morb
-from morb import rbms, stats, updaters, trainers, monitors, units, parameters
+from morb import rbms, stats, updaters, trainers, monitors
 
 import theano
 import theano.tensor as T
@@ -11,8 +11,7 @@ import gzip, cPickle
 import matplotlib.pyplot as plt
 plt.ion()
 
-from test_utils import generate_data, get_context
-import time
+from utils import generate_data, get_context
 
 # DEBUGGING
 
@@ -30,8 +29,8 @@ train_set, valid_set, test_set = cPickle.load(f)
 f.close()
 
 train_set_x, train_set_y = train_set
-valid_set_x, valid_set_y = train_set
-test_set_x, test_set_y = train_set
+valid_set_x, valid_set_y = valid_set
+test_set_x, test_set_y = test_set
 
 
 # TODO DEBUG
@@ -40,57 +39,38 @@ valid_set_x = valid_set_x[:1000]
 
 
 n_visible = train_set_x.shape[1]
-n_hidden = 100
+# n_hidden = 100 # 500
+n_hidden_mean = 100
+n_hidden_precision = 100
+mb_size = 20
+k = 1 # 15
+learning_rate = 0.01 # 0.1
+epochs = 2000
 
 
 print ">> Constructing RBM..."
-
-class AdvRBM(morb.base.RBM):
-    def __init__(self, n_visible, n_hidden):
-        super(AdvRBM, self).__init__()
-        # data shape
-        self.n_visible = n_visible
-        self.n_hidden = n_hidden
-        # units
-        self.v = units.BinaryUnits(self, name='v') # visibles
-        self.h = units.BinaryUnits(self, name='h') # hiddens
-        # parameters
-        self.W = parameters.AdvancedProdParameters(self, [self.v, self.h], [1,1], theano.shared(value = self._initial_W(), name='W'), name='W') # weights
-        self.bv = parameters.AdvancedBiasParameters(self, self.v, 1, theano.shared(value = self._initial_bv(), name='bv'), name='bv') # visible bias
-        self.bh = parameters.AdvancedBiasParameters(self, self.h, 1, theano.shared(value = self._initial_bh(), name='bh'), name='bh') # hidden bias
-        
-    def _initial_W(self):
-        return np.asarray( np.random.uniform(
-                   low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
-                   high  =  4*np.sqrt(6./(self.n_hidden+self.n_visible)),
-                   size  =  (self.n_visible, self.n_hidden)),
-                   dtype =  theano.config.floatX)
-        
-    def _initial_bv(self):
-        return np.zeros(self.n_visible, dtype = theano.config.floatX)
-        
-    def _initial_bh(self):
-        return np.zeros(self.n_hidden, dtype = theano.config.floatX)
-        
-
-
-
-
-
-
-
-rbm = AdvRBM(n_visible, n_hidden)
-# rbm = rbms.SigmoidBinaryRBM(n_visible, n_hidden)
+# rbm = rbms.LearntPrecisionGaussianBinaryRBM(n_visible, n_hidden)
+rbm = rbms.LearntPrecisionSeparateGaussianBinaryRBM(n_visible, n_hidden_mean, n_hidden_precision)
 initial_vmap = { rbm.v: T.matrix('v') }
 
-# try to calculate weight updates using CD-1 stats
+# try to calculate weight updates using CD stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=1, mean_field_for_gibbs=[rbm.v], mean_field_for_stats=[rbm.v])
+# s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k)
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.hp, rbm.hm], k=k)
+
+# We create an updater for each parameter variable.
+# IMPORTANT: the precision parameters must be constrained to be negative.
+# variables = [rbm.Wm.var, rbm.bvm.var, rbm.bh.var, rbm.Wp.var, rbm.bvp.var]
+variables = [rbm.Wm.var, rbm.bvm.var, rbm.bhm.var, rbm.Wp.var, rbm.bvp.var, rbm.bhp.var]
+precision_variables = [rbm.Wp.var, rbm.bvp.var]
 
 umap = {}
-for var in rbm.variables:
-    pu =  var + 0.001 * updaters.CDUpdater(rbm, var, s)
+for var in variables:
+    pu = var + (learning_rate/mb_size) * updaters.CDUpdater(rbm, var, s) # the learning rate is 0.001
+    if var in precision_variables:
+        pu = updaters.BoundUpdater(pu, bound=0, type='upper')
     umap[var] = pu
+    
 
 print ">> Compiling functions..."
 t = trainers.MinibatchTrainer(rbm, umap)
@@ -101,8 +81,12 @@ e_data = rbm.energy(s['data'])
 e_model = rbm.energy(s['model'])
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
-train = t.compile_function(initial_vmap, mb_size=100, monitors=[m, e_data, e_model], name='train', mode=mode)
-evaluate = t.compile_function(initial_vmap, mb_size=100, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', train=False, mode=mode)
+train = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, e_data, e_model], name='train', mode=mode)
+evaluate = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, m_data, m_model, e_data, e_model], name='evaluate', train=False, mode=mode)
+
+
+
+
 
 
 def plot_data(d):
@@ -137,10 +121,7 @@ def sample_evolution(start, ns=100): # start = start data
 
 # TRAINING 
 
-epochs = 200
 print ">> Training for %d epochs..." % epochs
-
-start_time = time.time()
 
 mses_train_so_far = []
 mses_valid_so_far = []
@@ -191,16 +172,17 @@ for epoch in range(epochs):
     # plot some samples
     plt.figure(2)
     plt.clf()
-    plt.imshow(vdata[0][0].reshape((28, 28)))
+    plt.imshow(vdata[0][0].reshape((28, 28)), vmin=0, vmax=1)
+    plt.colorbar()
     plt.draw()
     plt.figure(3)
     plt.clf()
-    plt.imshow(vmodel[0][0].reshape((28, 28)))
+    plt.imshow(vmodel[0][0].reshape((28, 28)), vmin=0, vmax=1)
+    plt.colorbar()
     plt.draw()
 
     
     print "Epoch %d" % epoch
-    print "%.2f seconds" % (time.time() - start_time)
     print "training set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_train, edata_train, emodel_train)
     print "validation set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_valid, edata_valid, emodel_valid)
 

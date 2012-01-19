@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.ion()
 
-from test_utils import generate_data, get_context
+from utils import generate_data, get_context
 
 # DEBUGGING
 
@@ -32,13 +32,15 @@ data_context_eval = data_context[-1000:, :]
 n_visible = data.shape[1]
 n_context = data_context.shape[1]
 n_hidden = 20
-n_factors = 50
+
 
 print ">> Constructing RBM..."
 numpy_rng = np.random.RandomState(123)
-
-def initial_W(n, f):
-    return np.asarray(np.random.uniform(low=-4*np.sqrt(6./(n+f)), high=4*np.sqrt(6./(n+f)), size=(n, f)), dtype=theano.config.floatX)
+initial_W = np.asarray( np.random.uniform(
+                   low   = -4*np.sqrt(6./(n_hidden+n_visible+n_context)),
+                   high  =  4*np.sqrt(6./(n_hidden+n_visible+n_context)),
+                   size  =  (n_visible, n_hidden, n_context)),
+                   dtype =  theano.config.floatX)
 initial_bv = np.zeros(n_visible, dtype = theano.config.floatX)
 initial_bh = np.zeros(n_hidden, dtype = theano.config.floatX)
 
@@ -49,12 +51,7 @@ rbm.v = units.BinaryUnits(rbm, name='v') # visibles
 rbm.h = units.BinaryUnits(rbm, name='h') # hiddens
 rbm.x = units.Units(rbm, name='x') # context
 
-Wv = theano.shared(value=initial_W(n_visible, n_factors), name='Wv')
-Wh = theano.shared(value=initial_W(n_hidden, n_factors), name='Wh')
-# Wx = theano.shared(value=initial_W(n_context, n_factors), name='Wx')
-Wx = Wv # parameter tying
-
-rbm.W = parameters.ThirdOrderFactoredParameters(rbm, [rbm.v, rbm.h, rbm.x], [Wv, Wh, Wx], name='W') # weights
+rbm.W = parameters.ThirdOrderParameters(rbm, [rbm.v, rbm.h, rbm.x], theano.shared(value = initial_W, name='W'), name='W') # weights
 rbm.bv = parameters.BiasParameters(rbm, rbm.v, theano.shared(value = initial_bv, name='bv'), name='bv') # visible bias
 rbm.bh = parameters.BiasParameters(rbm, rbm.h, theano.shared(value = initial_bh, name='bh'), name='bh') # hidden bias
 

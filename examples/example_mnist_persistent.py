@@ -11,7 +11,7 @@ import gzip, cPickle
 import matplotlib.pyplot as plt
 plt.ion()
 
-from test_utils import generate_data, get_context
+from utils import generate_data, get_context
 
 # DEBUGGING
 
@@ -34,15 +34,15 @@ test_set_x, test_set_y = test_set
 
 
 # TODO DEBUG
-train_set_x = train_set_x[:10000]
+# train_set_x = train_set_x[:10000]
 valid_set_x = valid_set_x[:1000]
 
 
 n_visible = train_set_x.shape[1]
-n_hidden = 100 # 500
+n_hidden = 500
 mb_size = 20
-k = 1 # 15
-learning_rate = 0.02 # 0.1
+k = 15
+learning_rate = 0.1
 epochs = 15
 
 
@@ -50,9 +50,11 @@ print ">> Constructing RBM..."
 rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
+persistent_vmap = { rbm.h: theano.shared(np.zeros((mb_size, n_hidden), dtype=theano.config.floatX)) }
+
 # try to calculate weight updates using CD stats
 print ">> Constructing contrastive divergence updaters..."
-s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
+s = stats.cd_stats(rbm, initial_vmap, visible_units=[rbm.v], hidden_units=[rbm.h], k=k, persistent_vmap=persistent_vmap, mean_field_for_stats=[rbm.v], mean_field_for_gibbs=[rbm.v])
 
 umap = {}
 for var in rbm.variables:
