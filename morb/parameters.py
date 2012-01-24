@@ -134,7 +134,7 @@ class SharedBiasParameters(Parameters):
         t = tensordot(vmap[self.u], self.var, axes=(range(1, self.nd+1), range(0, self.nd)))
         # now sum t over its trailing shared dimensions, which mimics broadcast + tensordot behaviour.
         axes = range(t.ndim - self.sd, t.ndim)
-        return T.sum(t, axis=axes)
+        return - T.sum(t, axis=axes)
 
                
 class Convolutional2DParameters(Parameters):

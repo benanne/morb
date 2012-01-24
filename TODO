@@ -1,3 +1,5 @@
+TODO: for some examples, the (free) energy rises and keeps rising... figure out what's going on there.
+
 TODO: write some proper automated tests
 
 TODO: combining softmaxunits with the convolutional parameters is impossible, because they both require a different tensor shape.
