@@ -1,9 +1,3 @@
-TODO: Parameters.energy_term sums over the minibatch dimension. Why? This makes it impossible to compute multiple energies in parallel.
-Leave the summing / averaging to the caller if desired.
-    - modify all Parameter implementations to no longer sum over the minibatch dimension
-    - modify all examples relying on this behaviour to do the summing manually
-    - investigate how this affects the free energy computation
-
 TODO: write some proper automated tests
 
 TODO: combining softmaxunits with the convolutional parameters is impossible, because they both require a different tensor shape.

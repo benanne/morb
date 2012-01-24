@@ -20,7 +20,7 @@ class Units(object):
     def activation(self, vmap):
         terms = [param.activation_term_for(self, vmap) for param in self.rbm.params_affecting(self)]
         # the linear activation is the sum of the activations for each of the parameters.
-        return sum(terms)
+        return sum(terms, T.constant(0, theano.config.floatX))
         
     def sample_from_activation(self, vmap):
         raise NotImplementedError("Sampling not supported for this Units instance: %s" % repr(self))
@@ -187,7 +187,7 @@ class SumUpdater(Updater):
         super(SumUpdater, self).__init__(updaters[0].variable, stats_list)
         
     def get_update(self):
-        return sum(pu.get_update() for pu in self.updaters)
+        return sum((pu.get_update() for pu in self.updaters), T.constant(0, theano.config.floatX))
         
     def get_theano_updates(self):
         u = {} # a sum updater has no state, so it has no theano updates of its own.
@@ -286,14 +286,14 @@ class RBM(object):
         """
         sums the gradient contributions of all Parameters instances for the given variable.
         """
-        return sum(p.energy_gradient_for(variable, vmap) for p in self.params_list if variable in p.variables)
+        return sum((p.energy_gradient_for(variable, vmap) for p in self.params_list if variable in p.variables), T.constant(0, theano.config.floatX))
     
     def energy_terms(self, vmap):
         return [params.energy_term(vmap) for params in self.params_list]
         
     def energy(self, vmap):
         # the energy is the sum of the energy terms for each of the parameters.
-        return sum(self.energy_terms(vmap))
+        return sum(self.energy_terms(vmap), T.constant(0, theano.config.floatX))
         
     def complete_units_list_split(self, units_list):
         """
@@ -436,7 +436,7 @@ class RBM(object):
         # all other terms are affected by the summing out of the units.        
         affected_terms = self.free_energy_affected_terms(units_list, vmap).values()  
         # note that this separation breaks down if there are dependencies between the Units instances given.
-        return sum(unchanged_terms + affected_terms)
+        return sum(unchanged_terms + affected_terms, T.constant(0, theano.config.floatX))
         
     def activations(self, units_list, vmap):
         units_list = self.complete_units_list(units_list)

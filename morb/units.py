@@ -28,6 +28,7 @@ class GaussianUnits(Units):
         super(GaussianUnits, self).__init__(rbm, name)
         proxy_name = (name + "_precision" if name is not None else None)
         self.precision_units = GaussianPrecisionProxyUnits(rbm, self, name=proxy_name)
+        self.proxy_units = [self.precision_units]
 
     def sample_from_activation(self, vmap):
         return samplers.gaussian(vmap[self])

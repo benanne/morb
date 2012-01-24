@@ -1,5 +1,6 @@
 from morb.base import Parameters
 
+import theano
 import theano.tensor as T
 from theano.tensor.nnet import conv
 
@@ -13,10 +14,12 @@ class FixedBiasParameters(Parameters):
         self.variables = []
         self.u = units
         
-        self.terms[self.u] = lambda vmap: -T.ones_like(vmap[self.u])
+        self.terms[self.u] = lambda vmap: T.constant(-1, theano.config.floatX) # T.constant is necessary so scan doesn't choke on it
         
     def energy_term(self, vmap):
-        return vmap[self.u] # NO minus sign! bias is -1 so this is canceled.
+        s = vmap[self.u]
+        return T.sum(s, axis=range(1, s.ndim)) # NO minus sign! bias is -1 so this is canceled.
+        # sum over all but the minibatch dimension.
         
         
 class ProdParameters(Parameters):
