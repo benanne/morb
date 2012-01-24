@@ -66,8 +66,8 @@ t = trainers.MinibatchTrainer(rbm, umap)
 m = monitors.reconstruction_mse(s, rbm.v)
 m_data = s['data'][rbm.v]
 m_model = s['model'][rbm.v]
-e_data = rbm.energy(s['data'])
-e_model = rbm.energy(s['model'])
+e_data = rbm.energy(s['data']).mean()
+e_model = rbm.energy(s['model']).mean()
 
 # train = t.compile_function(initial_vmap, mb_size=32, monitors=[m], name='train', mode=mode)
 train = t.compile_function(initial_vmap, mb_size=mb_size, monitors=[m, e_data, e_model], name='train', mode=mode)

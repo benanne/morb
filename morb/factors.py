@@ -104,6 +104,9 @@ class Factor(Parameters):
         when the Parameters instances are created, because the add_parameters
         method is called before they are fully initialised.
         """
+        if self.initialized: # don't initialize multiple times
+            return # TODO: maybe this should raise a warning?
+            
         for params in self.params_list:
             self.variables.extend(params.variables)
             units_list = list(params.units_list)

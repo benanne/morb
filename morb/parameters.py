@@ -16,7 +16,7 @@ class FixedBiasParameters(Parameters):
         self.terms[self.u] = lambda vmap: -T.ones_like(vmap[self.u])
         
     def energy_term(self, vmap):
-        return T.sum(vmap[self.u]) # NO minus sign! bias is -1 so this is canceled.
+        return vmap[self.u] # NO minus sign! bias is -1 so this is canceled.
         
         
 class ProdParameters(Parameters):
@@ -34,9 +34,9 @@ class ProdParameters(Parameters):
         self.energy_gradients[self.var] = lambda vmap: T.dot(vmap[self.vu].T, vmap[self.hu])
                 
     def energy_term(self, vmap):
-        return - T.sum(self.terms[self.hu](vmap) * vmap[self.hu])
+        return - T.sum(self.terms[self.hu](vmap) * vmap[self.hu], axis=1)
         # return - T.sum(T.dot(vmap[self.vu], self.var) * vmap[self.hu])
-        # T.sum sums both over the minibatch dimension and the hiddens dimension.
+        # T.sum sums over the hiddens dimension.
         
     
 class BiasParameters(Parameters):
@@ -51,7 +51,7 @@ class BiasParameters(Parameters):
         self.energy_gradients[self.var] = lambda vmap: T.sum(vmap[self.u], axis=0) # sum over minibatch axis
         
     def energy_term(self, vmap):
-        return - T.sum(T.dot(vmap[self.u], self.var)) # T.sum is for minibatches 
+        return - T.dot(vmap[self.u], self.var)
         # bias is NOT TRANSPOSED because it's a vector, and apparently vectors are COLUMN vectors by default.
 
 
@@ -80,8 +80,8 @@ class AdvancedProdParameters(Parameters):
     def energy_term(self, vmap):
         # v_part = tensordot(vmap[self.vu], self.var, axes=(range(1, self.vd+1), range(0, self.vd)))
         v_part = self.terms[self.hu](vmap)
-        neg_energy = tensordot(v_part, vmap[self.hu], axes=(range(0, self.hd+1), range(0, self.hd+1)))
-        # in this case, we also sum over the minibatches in the 2nd step, hence the ranges are hd+1 long.
+        neg_energy = tensordot(v_part, vmap[self.hu], axes=(range(1, self.hd+1), range(1, self.hd+1)))
+        # we do not sum over the first dimension, which is reserved for minibatches!
         return - neg_energy # don't forget to flip the sign!
 
 
@@ -98,7 +98,7 @@ class AdvancedBiasParameters(Parameters):
         self.energy_gradients[self.var] = lambda vmap: T.sum(vmap[self.u], axis=0) # sum over minibatch axis
         
     def energy_term(self, vmap):
-        return - T.sum(tensordot(vmap[self.u], self.var, axes=(range(1, self.ud+1), range(0, self.ud))), axis=0)
+        return - tensordot(vmap[self.u], self.var, axes=(range(1, self.ud+1), range(0, self.ud)))
         
 
 class SharedBiasParameters(Parameters):
@@ -131,10 +131,7 @@ class SharedBiasParameters(Parameters):
         t = tensordot(vmap[self.u], self.var, axes=(range(1, self.nd+1), range(0, self.nd)))
         # now sum t over its trailing shared dimensions, which mimics broadcast + tensordot behaviour.
         axes = range(t.ndim - self.sd, t.ndim)
-        t2 = T.sum(t, axis=axes)
-        # finally, sum out minibatch axis
-        return - T.sum(t2, axis=0)
-        
+        return T.sum(t, axis=axes)
 
                
 class Convolutional2DParameters(Parameters):
@@ -219,7 +216,8 @@ class Convolutional2DParameters(Parameters):
             return None
         
     def energy_term(self, vmap):
-        return - T.sum(self.terms[self.hu](vmap) * vmap[self.hu])
+        return - T.sum(self.terms[self.hu](vmap) * vmap[self.hu], axis=[1,2,3])
+        # sum over all but the minibatch axis
         
         
         
@@ -264,8 +262,8 @@ class ThirdOrderParameters(Parameters):
         self.energy_gradients[self.var] = gradient
         
     def energy_term(self, vmap):
-        return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1])
-        # sum is over the minibatch and the u1 dimension.
+        return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1], axis=1)
+        # sum is over the u1 dimension, not the minibatch dimension!
 
 
 
@@ -316,5 +314,5 @@ class ThirdOrderFactoredParameters(Parameters):
             tmp()
     
     def energy_term(self, vmap):
-        return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1])
-        # sum is over the minibatch and the u1 dimension.
+        return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1], axis=1)
+        # sum is over the u1 dimension, not the minibatch dimension!
