@@ -59,6 +59,14 @@ class ProxyUnits(Units):
         s = self.units.sample_from_activation(vmap)
         return self.func(s)
         
+    def mean_field(self, vmap):
+        m = self.units.mean_field(vmap)
+        return self.func(m)
+        
+    def mean_field_from_activation(self, vmap):
+        m = self.units.mean_field_from_activation(vmap)
+        return self.func(m)
+        
         
 class Parameters(object):
     def __init__(self, rbm, units_list, name=None):

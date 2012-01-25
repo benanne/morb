@@ -33,8 +33,8 @@ class GaussianUnits(Units):
     def sample_from_activation(self, vmap):
         return samplers.gaussian(vmap[self])
         
-    def mean_field_from_activation(self, a):
-        return a
+    def mean_field_from_activation(self, vmap):
+        return vmap[self]
 
 
 class LearntPrecisionGaussianProxyUnits(ProxyUnits):
