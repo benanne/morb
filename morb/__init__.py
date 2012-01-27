@@ -13,4 +13,4 @@ import tempering
 
 __all__ = ['base', 'parameters', 'units', 'rbms', 'stats', 'trainers',
            'updaters', 'monitors', 'samplers', 'activation_functions',
-           'misc', 'tempering']
+           'misc']
