@@ -48,3 +48,8 @@ def truncated_exponential_mean(a, maximum=1.0):
 
 
 
+def laplacian(b, mu=0.0):
+    # laplacian distributition is only exponential family when mu=0!
+    uniform_samples = theano_rng.uniform(size=b.shape, dtype=theano.config.floatX)
+    return mu - b*T.sgn(uniform_samples-0.5) * T.log(1 - 2*T.abs(uniform_samples-0.5))
+
