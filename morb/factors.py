@@ -30,6 +30,7 @@ class Factor(Parameters):
         self.params_list = []
         self.terms = {}
         self.energy_gradients = {} # careful, this is now a dict of LISTS to support parameter tying.
+        self.energy_gradient_sums = {} # same here!
         self.initialized = False
         
     def check_initialized(self):
@@ -87,6 +88,13 @@ class Factor(Parameters):
     def energy_gradient_for(self, variable, vmap):
         self.check_initialized()
         return sum(f(vmap) for f in self.energy_gradients[variable]) # sum all contributions
+        
+    def energy_gradient_sum_for(self, variable, vmap):
+        self.check_initialized()
+        return T.sum(self.energy_gradient_for(variable, vmap), axis=0)
+        # TODO: this always uses the 'fallback' behaviour, even when the composed
+        # parameter objects actually do provide summed implementations. Figure out
+        # how these can be used instead - this would be much more efficient.
     
     def energy_term(self, vmap):
         """

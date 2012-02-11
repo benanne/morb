@@ -49,8 +49,8 @@ class CDUpdater(Updater):
         self.rbm = rbm
         
     def get_update(self):
-        positive_term = self.rbm.energy_gradient(self.variable, self.stats['data'])
-        negative_term = self.rbm.energy_gradient(self.variable, self.stats['model'])
+        positive_term = self.rbm.energy_gradient_sum(self.variable, self.stats['data'])
+        negative_term = self.rbm.energy_gradient_sum(self.variable, self.stats['model'])
         
         return positive_term - negative_term
                 
@@ -71,7 +71,7 @@ class SparsityUpdater(Updater):
             if u in vmap:
                 vmap[u] -= target
         
-        return - self.rbm.energy_gradient(self.variable, vmap) # minus sign is important!
+        return - self.rbm.energy_gradient_sum(self.variable, vmap) # minus sign is important!
         
 
 class BoundUpdater(Updater):

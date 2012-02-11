@@ -74,6 +74,7 @@ class Parameters(object):
         self.units_list = units_list
         self.terms = {} # terms is a dict of FUNCTIONS that take a vmap.
         self.energy_gradients = {} # a dict of FUNCTIONS that take a vmap.
+        self.energy_gradient_sums = {} # a dict of FUNCTIONS that take a vmap.
         self.name = name
         self.rbm.add_parameters(self)
         
@@ -81,7 +82,27 @@ class Parameters(object):
         return self.terms[units](vmap)
         
     def energy_gradient_for(self, variable, vmap):
+        """
+        Returns the energy gradient for each example in the batch.
+        """
         return self.energy_gradients[variable](vmap)
+        
+    def energy_gradient_sum_for(self, variable, vmap):
+        """
+        Returns the energy gradient, summed across the minibatch dimension.
+        If a fast implementation for this is available in the energy_gradient_sums
+        dictionary, this will be used. Else the energy gradient will be computed
+        for each example in the batch (using the implementation from the
+        energy_gradients dictionary) and then summed.
+        
+        Take a look at the ProdParameters implementation for an example of where
+        this is useful: the gradient summed over the batch can be computed more
+        efficiently with a dot product.
+        """
+        if variable in self.energy_gradient_sums:
+            return self.energy_gradient_sums[variable](vmap)
+        else:
+            return T.sum(self.energy_gradients[variable](vmap), axis=0)
         
     def energy_term(self, vmap):
         raise NotImplementedError("Parameters base class")
@@ -295,6 +316,13 @@ class RBM(object):
         sums the gradient contributions of all Parameters instances for the given variable.
         """
         return sum((p.energy_gradient_for(variable, vmap) for p in self.params_list if variable in p.variables), T.constant(0, theano.config.floatX))
+        
+    def energy_gradient_sum(self, variable, vmap):
+        """
+        sums the gradient contributions of all Parameters instances for the given variable,
+        where the contributions are summed over the minibatch dimension.
+        """
+        return sum((p.energy_gradient_sum_for(variable, vmap) for p in self.params_list if variable in p.variables), T.constant(0, theano.config.floatX))
     
     def energy_terms(self, vmap):
         return [params.energy_term(vmap) for params in self.params_list]
