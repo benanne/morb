@@ -1,9 +1,5 @@
 TODO: implement energy_gradients for ThirdOrderFactoredParameters and Convolutional2DParameters
 
-TODO: make Factor use energy_gradient_sums when available, instead of always relying on the energy_gradients (which is substantially slower for ProdParameters, and not currently implemented for ThirdOrderFactoredParameters and Convolutional2DParameters!)
-
-
-
 TODO: current minibatchtrainer isn't efficient when multiple functions are compiled - the shared variables for the data are recreated for each function. Find a better way of implementing this. Also, it would be good if the 'updates' could be made accessible somehow, which is useful to diagnose problems. I guess this whole class needs to be rethought a bit.
 
 TODO: Parameters.energy_gradient gives the NEGATIVE of the energy gradient. Either rename this method, or fix this (and take the negative wherever it is used)

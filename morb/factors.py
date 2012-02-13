@@ -75,11 +75,19 @@ class Factor(Parameters):
                 fp = self.factor_product(params, vmap) # compute factor values
                 fvmap = vmap.copy()
                 fvmap.update({ self: fp }) # insert them in a vmap copy
-                return params.energy_gradients[var](fvmap)
+                return params.energy_gradient_for(var, fvmap)
+                
+            def grad_sum(vmap):
+                fp = self.factor_product(params, vmap) # compute factor values
+                fvmap = vmap.copy()
+                fvmap.update({ self: fp }) # insert them in a vmap copy
+                return params.energy_gradient_sum_for(var, fvmap)
            
             if var not in self.energy_gradients:
                 self.energy_gradients[var] = []
+                self.energy_gradient_sums[var] = []
             self.energy_gradients[var].append(grad)
+            self.energy_gradient_sums[var].append(grad_sum)
 
     def activation_term_for(self, units, vmap):
         self.check_initialized()
@@ -91,11 +99,8 @@ class Factor(Parameters):
         
     def energy_gradient_sum_for(self, variable, vmap):
         self.check_initialized()
-        return T.sum(self.energy_gradient_for(variable, vmap), axis=0)
-        # TODO: this always uses the 'fallback' behaviour, even when the composed
-        # parameter objects actually do provide summed implementations. Figure out
-        # how these can be used instead - this would be much more efficient.
-    
+        return sum(f(vmap) for f in self.energy_gradient_sums[variable]) # sum all contributions
+
     def energy_term(self, vmap):
         """
         The energy term of the factor, which is the product of all activation
