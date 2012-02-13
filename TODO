@@ -13,6 +13,7 @@ TODO: combining softmaxunits with the convolutional parameters is impossible, be
     - softmax requires: (minibatches, units, states)
     investigate if it is possible to write a 'ReshapedUnits' proxy that makes this work.
     Upon instantiation of the proxy, it will have to add itself to the Units.proxy_units variable, because the encapsulated Units instance is not 'aware' that it will be proxied when it is created.
+    If this is implemented, it will become necessary to support proxies of proxies, which is currently not supported!
 
 TODO: test NRELUnits
 
