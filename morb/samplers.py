@@ -52,4 +52,50 @@ def laplacian(b, mu=0.0):
     # laplacian distributition is only exponential family when mu=0!
     uniform_samples = theano_rng.uniform(size=b.shape, dtype=theano.config.floatX)
     return mu - b*T.sgn(uniform_samples-0.5) * T.log(1 - 2*T.abs(uniform_samples-0.5))
+    
+    
+    
+## approximate gamma sampler
+
+
+def log_gamma_ratio_stirling(z, k):
+    """
+    computes log(gamma(z+k)/gamma(z)) using stirling's approximation.
+    """
+    return -k + (z + k - 0.5) * T.log(z + k) - (z - 0.5) * T.log(z)
+    
+def log_gamma_windschitl(z):
+    """
+    computes log(gamma(z)) using windschitl's approximation.
+    """
+    return 0.5 * (T.log(2*np.pi) - T.log(z)  + z * (2 * T.log(z) - 2 + T.log(z * T.sinh(1/z) + 1 / (810*(z**6)))))
+    
+def log_gamma_ratio_windschitl(z, k):
+    """
+    computes log(gamma(z+k)/gamma(z)) using windschitl's approximation.
+    """
+    return log_gamma_windschitl(z + k) - log_gamma_windschitl(z)
+    
+ 
+def sample_gamma_approx(k, theta=1):
+    """
+    Sample from a gamma distribution using the Wilson-Hilferty approximation.
+    The gamma function itself is also approximated, so everything can be
+    computed on the GPU (using the Windschitl approximation).
+    """
+    lmbda = 1/3.0 # according to Wilson and Hilferty
+    mu = T.exp(log_gamma_ratio_windschitl(k, lmbda))
+    sigma = T.sqrt(T.exp(log_gamma_ratio_windschitl(k, 2*lmbda)) - mu**2)
+    normal_samples = theano_rng.normal(size=k.shape, avg=mu, std=sigma, dtype=theano.config.floatX)
+    gamma_samples = theta * T.abs_(normal_samples ** 3)
+    # The T.abs_ is technically incorrect. The problem is that, without it, this formula may yield
+    # negative samples, which is impossible for the gamma distribution.
+    # It was also noted that, for very small values of the shape parameter k, the distribution
+    # of resulting samples is roughly symmetric around 0. By 'folding' the negative part
+    # onto the positive part, we still get a decent approximation because of this.
+    return gamma_samples
+    
+    
+    
+    
 
