@@ -121,5 +121,37 @@ class NRELUnits(Units):
         return T.max(0, vmap[self])
     
         
+        
+        
+class GammaLogProxyUnits(ProxyUnits):
+    def __init__(self, rbm, units, name=None):
+        func = lambda x: T.log(x)
+        super(GammaLogProxyUnits, self).__init__(rbm, units, func, name)
+             
+class GammaUnits(Units):
+    """
+    Two-parameter gamma distributed units, using an approximate sampling procedure for speed.
+    The activations should satisfy some constraints:
+    - the activation of the GammaUnits should be strictly negative.
+    - the activation of the GammaLogProxyUnits should be strictly larger than -1.
+    It is recommended to use a FixedBiasParameters instance for the GammaLogProxyUnits,
+    so that the 'remaining' part of the activation should be strictly positive. This
+    constraint is much easier to satisfy.
+    """
+    def __init__(self, rbm, name=None):
+        super(GammaUnits, self).__init__(rbm, name)
+        proxy_name = (name + "_log" if name is not None else None)
+        self.log_units = GammaLogProxyUnits(rbm, self, name=proxy_name)
+        self.proxy_units = [self.log_units]
+
+    def sample_from_activation(self, vmap):
+        a1 = vmap[self]
+        a2 = vmap[self.log_units]
+        return samplers.gamma_approx(a2 + 1, -1 / a1)
+        
+    def sample(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.log_units.activation(vmap)
+        return self.sample_from_activation({ self: a1, self.log_units: a2 })
 
 

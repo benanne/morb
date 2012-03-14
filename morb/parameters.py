@@ -334,3 +334,59 @@ class ThirdOrderFactoredParameters(Parameters):
     def energy_term(self, vmap):
         return - T.sum(self.terms[self.u1](vmap) * vmap[self.u1], axis=1)
         # sum is over the u1 dimension, not the minibatch dimension!
+        
+
+
+
+class TransformedParameters(Parameters):
+    """
+    Transform parameter variables, adapt gradients accordingly
+    """
+    def __init__(self, params, transforms, transform_gradients, name=None):
+        """
+        params: a Parameters instance for which variables should be transformed
+        transforms: a dict mapping variables to their transforms
+        gradients: a dict mapping variables to the gradient of their transforms
+        
+        IMPORTANT: the original Parameters instance should not be used afterwards
+        as it will be removed from the RBM.
+        
+        ALSO IMPORTANT: because of the way the chain rule is applied, the old
+        Parameters instance is expected to be linear in the variables.
+        
+        Example usage:
+            rbm = RBM(...)
+            h = Units(...)
+            v = Units(...)
+            var_W = theano.shared(...)
+            W = ProdParameters(rbm, [u, v], var_W, name='W')
+            W_tf = TransformedParameters(W, { var_W: T.exp(var_W) }, { var_W: T.exp(var_W) }, name='W_tf')
+        """
+        self.encapsulated_params = params
+        self.transforms = transforms
+        self.transform_gradients = transform_gradients
+
+        # remove the old instance, this one will replace it
+        params.rbm.remove_parameters(params)
+        # TODO: it's a bit nasty that the old instance is first added to the RBM and then removed again.
+        # maybe there is a way to prevent this? For example, giving the old parameters a 'dummy' RBM
+        # like in the factor implementation. But then this dummy has to be initialised first...
+        
+        # initialise
+        super(TransformedParameters, self).__init__(params.rbm, params.units_list, name)
+        
+        self.variables = params.variables
+        for u, l in params.terms.items(): # in the terms, replace the vars by their transforms
+            self.terms[u] = lambda vmap: theano.clone(l(vmap), transforms)
+            
+        for v, l in params.energy_gradients.items():
+            self.energy_gradients[v] = lambda vmap: l(vmap) * transform_gradients[v] # chain rule
+            
+        for v, l in params.energy_gradient_sums.items():
+            self.energy_gradient_sums[v] = lambda vmap: l(vmap) * transform_gradients[v] # chain rule
+            
+    def energy_term(self, vmap):
+        old = self.encapsulated_params.energy_term(vmap)
+        return theano.clone(old, self.transforms)
+        
+        

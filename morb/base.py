@@ -269,6 +269,9 @@ class RBM(object):
     def add_parameters(self, params):
         self.params_list.append(params)
         
+    def remove_parameters(self, params):
+        self.params_list.remove(params)
+        
     @property
     def variables(self):
         """

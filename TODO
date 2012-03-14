@@ -1,3 +1,7 @@
+TODO: test TransformedParameters
+
+TODO: test GammaUnits
+
 TODO: implement energy_gradients for ThirdOrderFactoredParameters and Convolutional2DParameters
 
 TODO: current minibatchtrainer isn't efficient when multiple functions are compiled - the shared variables for the data are recreated for each function. Find a better way of implementing this. Also, it would be good if the 'updates' could be made accessible somehow, which is useful to diagnose problems. I guess this whole class needs to be rethought a bit.
