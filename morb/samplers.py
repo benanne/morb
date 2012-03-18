@@ -128,7 +128,7 @@ def gamma_approx(k, theta=1):
     """
     Sample from a gamma distribution using the Wilson-Hilferty approximation.
     The gamma function itself is also approximated, so everything can be
-    computed on the GPU (using the Windschitl approximation).
+    computed on the GPU (using the Lanczos approximation).
     """
     lmbda = 1/3.0 # according to Wilson and Hilferty
     mu = T.exp(_log_gamma_ratio_lanczos(k, lmbda))

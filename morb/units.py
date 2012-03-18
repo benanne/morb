@@ -155,3 +155,39 @@ class GammaUnits(Units):
         return self.sample_from_activation({ self: a1, self.log_units: a2 })
 
 
+
+
+class SymmetricBinaryProxyUnits(ProxyUnits):
+    def __init__(self, rbm, units, name=None):
+        func = lambda x: 1 - x # flip
+        super(SymmetricBinaryProxyUnits, self).__init__(rbm, units, func, name)
+
+
+class SymmetricBinaryUnits(Units):
+    """
+    Symmetric binary units can be used to include both x and (1 - x) in the energy
+    function. This is useful in cases where parameters have to be constrained to
+    yield valid conditional distributions. Making the energy function symmetric
+    allows for these constraints to be much weaker. For more info, refer to
+    http://metaoptimize.com/qa/questions/9628/symmetric-energy-functions-for-rbms
+    and the paper referenced there.
+    """
+    def __init__(self, rbm, name=None):
+        super(SymmetricBinaryUnits, self).__init__(rbm, name)
+        proxy_name = (name + '_flipped' if name is not None else None)
+        self.flipped_units = SymmetricBinaryProxyUnits(rbm, self, name=proxy_name)
+        self.proxy_units = [self.flipped_units]
+        
+    def sample_from_activation(self, vmap):
+        p = activation_functions.sigmoid(vmap[self] - vmap[self.flipped_units])
+        return samplers.bernoulli(p)
+        
+    def mean_field_from_activation(self, vmap):
+        return activation_functions.sigmoid(vmap[self] - vmap[self.flipped_units])
+
+    def free_energy_term_from_activation(self, vmap):
+        # softplus of unit activations, summed over # units
+        s = - T.nnet.softplus(vmap[self] - vmap[self.flipped_units])
+        # sum over all but the minibatch dimension
+        return T.sum(s, axis=range(1, s.ndim))
+
