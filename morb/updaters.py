@@ -95,7 +95,8 @@ class BoundUpdater(Updater):
             condition = update >= self.bound
         else: # type is 'upper'
             condition = update <= self.bound
-        return T.switch(condition, update, T.ones_like(update) * self.bound)
+        # return T.switch(condition, update, T.ones_like(update) * self.bound)
+        return T.switch(condition, update, self.variable)
       
     def get_theano_updates(self):
         # The BoundUpdater has no state, so the only updates that should be returned
