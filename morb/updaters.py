@@ -102,3 +102,29 @@ class BoundUpdater(Updater):
         # The BoundUpdater has no state, so the only updates that should be returned
         # are those of the encapsulated updater.
         return self.pu.get_theano_updates()
+        
+        
+        
+class GradientUpdater(Updater):
+    """
+    Takes any objective in the form of a scalar Theano expression and uses T.grad
+    to compute the update with respect to the given parameter variable.
+    
+    This can be used to train/finetune a model supervisedly or as an auto-
+    encoder, for example.
+    """
+    def __init__(self, objective, variable, theano_updates={}):
+        """
+        the theano_updates argument can be used to pass in updates if the objective
+        contains a scan op or something.
+        """
+        super(GradientUpdater, self).__init__(variable)
+        self.update = T.grad(objective, variable)
+        self.theano_updates = theano_updates
+        
+    def get_update(self):
+        return self.update
+        
+    def get_theano_updates(self):
+        return self.theano_updates
+

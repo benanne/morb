@@ -9,7 +9,8 @@ import monitors
 import samplers
 import activation_functions
 import misc
+import objectives
 
 __all__ = ['base', 'parameters', 'units', 'rbms', 'stats', 'trainers',
            'updaters', 'monitors', 'samplers', 'activation_functions',
-           'misc']
+           'misc', 'objectives']

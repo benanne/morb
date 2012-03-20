@@ -1,8 +1,6 @@
+TODO: write an example that trains an autoencoder
+
 TODO: test TransformedParameters
-
-TODO: test GammaUnits
-
-TODO: test SymmetricBinaryUnits
 
 TODO: implement energy_gradients for ThirdOrderFactoredParameters and Convolutional2DParameters
 
