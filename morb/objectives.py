@@ -61,7 +61,7 @@ def cross_entropy(units_list, vmap_targets, vmap_predictions):
     vmap_predictions: vmap dictionary containing model predictions
     """
     t, p = vmap_targets, vmap_predictions
-    return sum(- t[u] * T.log(p[u]) - (1 - t[u]) * T.log(1 - p[u])) for u in units_list)
+    return sum((- t[u] * T.log(p[u]) - (1 - t[u]) * T.log(1 - p[u])) for u in units_list)
 
     
 # TODO: add objectives:
