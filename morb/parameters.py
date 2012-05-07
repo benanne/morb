@@ -183,7 +183,7 @@ class Convolutional2DParameters(Parameters):
         self.terms[self.hu] = term_hu
         
         def gradient(vmap):
-            pass # TODO!
+            raise NotImplementedError # TODO
         
         def gradient_sum(vmap):
             if self.visible_shape is not None:

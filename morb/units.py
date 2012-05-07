@@ -4,8 +4,14 @@ import theano.tensor as T
 
 
 class BinaryUnits(Units):
+    def success_probability_from_activation(self, vmap):
+        return activation_functions.sigmoid(vmap[self])
+        
+    def success_probability(self, vmap):
+        return self.success_probability_from_activation({ self: self.activation(vmap) })
+
     def sample_from_activation(self, vmap):
-        p = activation_functions.sigmoid(vmap[self])
+        p = self.success_probability_from_activation(vmap)
         return samplers.bernoulli(p)
         
     def mean_field_from_activation(self, vmap):
@@ -29,9 +35,16 @@ class GaussianUnits(Units):
         proxy_name = (name + "_precision" if name is not None else None)
         self.precision_units = GaussianPrecisionProxyUnits(rbm, self, name=proxy_name)
         self.proxy_units = [self.precision_units]
+        
+    def mean_from_activation(self, vmap): # mean is the parameter
+        return vmap[self]
+        
+    def mean(self, vmap):
+        return self.mean_from_activation({ self: self.activation(vmap) })
 
     def sample_from_activation(self, vmap):
-        return samplers.gaussian(vmap[self])
+        mu = self.mean_from_activation(vmap)
+        return samplers.gaussian(mu)
         
     def mean_field_from_activation(self, vmap):
         return vmap[self]
@@ -48,11 +61,35 @@ class LearntPrecisionGaussianUnits(Units):
         proxy_name = (name + "_precision" if name is not None else None)
         self.precision_units = LearntPrecisionGaussianProxyUnits(rbm, self, name=proxy_name)
         self.proxy_units = [self.precision_units]
-
+        
+    def mean_from_activation(self, vmap):
+        return vmap[self] / self.precision_from_activation(vmap)
+    
+    def mean(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.precision_units.activation(vmap)
+        return self.mean_from_activation({ self: a1, self.precision_units: a2 })
+    
+    def variance_from_activation(self, vmap):
+        return 1 / self.precision_from_activation(vmap)
+    
+    def variance(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.precision_units.activation(vmap)
+        return self.variance_from_activation({ self: a1, self.precision_units: a2 })
+    
+    def precision_from_activation(self, vmap):
+        return -2 * vmap[self.precision_units]
+    
+    def precision(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.precision_units.activation(vmap)
+        return self.precision_from_activation({ self: a1, self.precision_units: a2 })
+        
     def sample_from_activation(self, vmap):
-        a1 = vmap[self]
-        a2 = vmap[self.precision_units]
-        return samplers.gaussian(a1/(-2*a2), 1/(-2*a2))
+        mu = self.mean_from_activation(vmap)
+        sigma2 = self.variance_from_activation(vmap)
+        return samplers.gaussian(mu, sigma2)
         
     def sample(self, vmap):
         a1 = self.activation(vmap)
@@ -67,8 +104,14 @@ class SoftmaxUnits(Units):
     # 0 = minibatches
     # 1 = units
     # 2 = states
+    def probabilities_from_activation(self, vmap):
+        return activation_functions.softmax(vmap[self])
+    
+    def probabilities(self, vmap):
+        return self.probabilities_from_activation({ self: self.activation(vmap) })
+    
     def sample_from_activation(self, vmap):
-        p = activation_functions.softmax(vmap[self])
+        p = self.probabilities_from_activation(vmap)
         return samplers.multinomial(p)
 
 
@@ -76,28 +119,49 @@ class SoftmaxWithZeroUnits(Units):
     """
     Like SoftmaxUnits, but in this case a zero state is possible, yielding N+1 possible states in total.
     """
+    def probabilities_from_activation(self, vmap):
+        return activation_functions.softmax_with_zero(vmap[self])
+        
+    def probabilities(self, vmap):
+        return self.probabilities_from_activation({ self: self.activation(vmap) })
+    
     def sample_from_activation(self, vmap):
-        p0 = activation_functions.softmax_with_zero(vmap[self])
+        p0 = self.probabilities_from_activation(vmap)
         s0 = samplers.multinomial(p0)
         s = s0[:, :, :-1] # chop off the last state (zero state)
         return s
 
 
 class TruncatedExponentialUnits(Units):
+    def rate_from_activation(self, vmap): # lambda
+        return -vmap[self] # lambda = -activation!
+        
+    def rate(self, vmap):
+        return self.rate_from_activation({ self: self.activation(vmap) })
+
     def sample_from_activation(self, vmap):
-        return samplers.truncated_exponential(-vmap[self]) # lambda = -activation!
+        rate = self.rate_from_activation(vmap)
+        return samplers.truncated_exponential(rate)
         
     def mean_field_from_activation(self, vmap):
-        return samplers.truncated_exponential_mean(-vmap[self])
+        rate = self.rate_from_activation(vmap)
+        return samplers.truncated_exponential_mean(rate)
 
 
 
 class ExponentialUnits(Units):
+    def rate_from_activation(self, vmap): # lambda
+        return -vmap[self] # lambda = -activation!
+        
+    def rate(self, vmap):
+        return self.rate_from_activation({ self: self.activation(vmap) })
+
     def sample_from_activation(self, vmap):
-        return samplers.exponential(-vmap[self]) # lambda = -activation!
+        rate = self.rate_from_activation(vmap)
+        return samplers.exponential(rate) # lambda = -activation!
         
     def mean_field_from_activation(self, vmap):
-        return 1.0 / (-vmap[self])
+        return 1.0 / self.rate_from_activation(vmap)
         
         
 
@@ -114,7 +178,7 @@ class NRELUnits(Units):
     See: http://metaoptimize.com/qa/questions/8524/energy-function-of-an-rbm-with-noisy-rectified-linear-units-nrelus
     """
     def sample_from_activation(self, vmap):
-        s = a + samplers.gaussian(0, T.nnet.sigmoid(vmap[self])) # approximation: linear + gaussian noise
+        s = vmap[self] + samplers.gaussian(0, T.nnet.sigmoid(vmap[self])) # approximation: linear + gaussian noise
         return T.max(0, s) # rectify
         
     def mean_field_from_activation(self, vmap):

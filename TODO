@@ -1,3 +1,10 @@
+TODO: mapping a vmap onto an activation vmap is a common operation for Units, it would be good if there were a method for this, with a short name.
+    it has to be overridable, for unit types that have proxies (learntprecisiongaussian for example)
+    refactor units.py to use this method.
+    maybe Units.amap(vmap) ?
+
+TODO: implement free energy for gaussian units with fixed variance (already computed, see lyxfile)
+
 TODO: write an example that trains an autoencoder
 
 TODO: test TransformedParameters
