@@ -1,3 +1,12 @@
+TODO: score matching
+    - implicit score matching
+    - denoising score matching
+    - ratio matching
+    
+TODO: add a general purpose 'autoencoder' updater which can do MSE and cross-entropy (and maybe the 'natural' error measure associated with a distribution, if it exists)
+
+TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
+
 TODO: mapping a vmap onto an activation vmap is a common operation for Units, it would be good if there were a method for this, with a short name.
     it has to be overridable, for unit types that have proxies (learntprecisiongaussian for example)
     refactor units.py to use this method.
@@ -86,8 +95,6 @@ dE/dR = dE/dv*dv/dR. Since v = Rx, dv/dR is easy. dE/dv is also fairly easy. One
 - Think about how this could be incorporated.
 
 TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
-
-TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
 
 TODO: Exact partition function calculation
   - can this be formulated for a general RBM model easily?
