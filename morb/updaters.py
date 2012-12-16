@@ -127,4 +127,65 @@ class GradientUpdater(Updater):
         
     def get_theano_updates(self):
         return self.theano_updates
+        
+        
+class ImplicitScoreMatchingUpdater(Updater):
+    """
+    implements the implicit version of the score matching objective, an alternative to
+    maximum likelihood that doesn't require an approximation of the partition function.
+    
+    This approach is only valid if the domain of the input is the real numbers. That means it
+    won't work for binary input units, or other unit types that don't define a distribution
+    on the entire real line. In practice, this is used almost exclusively with Gaussian
+    visible units.
+    """
+    def __init__(self, rbm, visible_units, hidden_units, context_units):
+        
+        free_energy = rbm.free_energy(hidden_units, vmap) # TODO: what is the vmap here? This usually comes in the form of a stats object.
+        scores = [T.grad(free_energy, vmap[u]) for u in visible_units]
+        score_map = dict(zip(visible_units, scores))
+        
+        # we need to integrate out the hiddens. What do we do with context units?
+        pass # TODO
 
+    def get_update(self):
+        pass # TODO
+        
+    # TODO: does this need to take a stats object? if so, what kind?
+
+
+class DenoisingScoreMatchingUpdater(Updater):
+    """
+    implements the denoising version of the score matching objective, an alternative to
+    maximum likelihood that doesn't require an approximation of the partition function.
+    
+    This approach is only valid if the domain of the input is the real numbers. That means it
+    won't work for binary input units, or other unit types that don't define a distribution
+    on the entire real line. In practice, this is used almost exclusively with Gaussian
+    visible units.
+    """
+    def __init__(self, rbm, visible_units, hidden_units, context_units):
+        pass # TODO
+
+    def get_update(self):
+        pass # TODO
+
+
+class RatioMatchingUpdater(Updater):
+    """
+    implements the ratio matching objective, an alternative to
+    maximum likelihood that doesn't require an approximation of the partition function.
+    
+    This approach is only valid if the domain of the input is binary. It won't work for
+    any other type of input units.
+    """
+    def __init__(self, rbm, visible_units, hidden_units, context_units):
+        pass # TODO
+
+    def get_update(self):
+        pass # TODO
+        
+        
+# TODO: non-negative score matching?
+
+# TODO: generalized score matching with marginalization as its linear operator?
