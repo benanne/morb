@@ -127,4 +127,18 @@ class GradientUpdater(Updater):
         
     def get_theano_updates(self):
         return self.theano_updates
-
+        
+        
+class AutoencoderUpdater(Updater):
+    """
+    Implements a 'natural autoencoder' update.
+    """
+    def __init__(self, rbm, variable, visible_units, hidden_units, context_units=[]):
+        super(AutoencoderUpdater, self).__init__(variable)
+        self.rbm = rbm
+        # TODO: look at cd_stats for this. there will probably be a fair amount of duplicate code :(
+        # self.update = 
+        
+    def get_update(self):
+        return self.update
+                

@@ -1,9 +1,11 @@
+TODO: AutoencoderUpdater
+
 TODO: score matching
     - implicit score matching
     - denoising score matching
     - ratio matching
     
-TODO: add a general purpose 'autoencoder' updater which can do MSE and cross-entropy (and maybe the 'natural' error measure associated with a distribution, if it exists)
+TODO: add a general purpose 'autoencoder' updater which can use a custom error measure (which would be MSE or CE in the most common case), not just the 'natural' one associated with the RBM. This would be useful to build autoencoders with NReLUs for example.
 
 TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
 
