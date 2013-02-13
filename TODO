@@ -1,41 +1,39 @@
-TODO: AutoencoderUpdater
+TODO: autoencoders
+    - support for ProxyUnits
+    - support for context units
+    - implement denoising regularisation, CE-based sparsity, contractive regularisation
 
 TODO: score matching
     - implicit score matching
     - denoising score matching
     - ratio matching
     
+TODO: truncated exponential sampler fails for large lambda (in magnitude) and for lambda = 0. These cases can occur... fix this.
+    
 TODO: add a general purpose 'autoencoder' updater which can use a custom error measure (which would be MSE or CE in the most common case), not just the 'natural' one associated with the RBM. This would be useful to build autoencoders with NReLUs for example.
 
+TODO: implement free energy for gaussian units with fixed variance (already computed, see lyxfile)
+
+TODO: write an example that trains an autoencoder
+
 TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
+
+TODO: Parameters.energy_gradient gives the NEGATIVE of the energy gradient. Either rename this method, or fix this (and take the negative wherever it is used)
+
+TODO: current minibatchtrainer isn't efficient when multiple functions are compiled - the shared variables for the data are recreated for each function. Find a better way of implementing this. Also, it would be good if the 'updates' could be made accessible somehow, which is useful to diagnose problems. I guess this whole class needs to be rethought a bit.
+
+TODO: consider introducing a new object that encapsulates an RBM and a division into visible/hidden/context units. This could be used to simplify the cd_stats and the AutoencoderUpdater code, and reduce code duplication.
 
 TODO: mapping a vmap onto an activation vmap is a common operation for Units, it would be good if there were a method for this, with a short name.
     it has to be overridable, for unit types that have proxies (learntprecisiongaussian for example)
     refactor units.py to use this method.
     maybe Units.amap(vmap) ?
 
-TODO: implement free energy for gaussian units with fixed variance (already computed, see lyxfile)
-
-TODO: write an example that trains an autoencoder
-
-TODO: test TransformedParameters
+TODO: test TransformedParameters, write an example (FCRBM)?
 
 TODO: implement energy_gradients for ThirdOrderFactoredParameters and Convolutional2DParameters
 
-TODO: current minibatchtrainer isn't efficient when multiple functions are compiled - the shared variables for the data are recreated for each function. Find a better way of implementing this. Also, it would be good if the 'updates' could be made accessible somehow, which is useful to diagnose problems. I guess this whole class needs to be rethought a bit.
-
-TODO: Parameters.energy_gradient gives the NEGATIVE of the energy gradient. Either rename this method, or fix this (and take the negative wherever it is used)
-
 TODO: rbm.mean_field and rbm.sample always complete the vmap - sometimes this is undesirable. Maybe add a 'complete=True' argument (default True)
-
-TODO: write some proper automated tests
-
-TODO: combining softmaxunits with the convolutional parameters is impossible, because they both require a different tensor shape.
-    - convolution requires: (minibatches, maps, width, height)
-    - softmax requires: (minibatches, units, states)
-    investigate if it is possible to write a 'ReshapedUnits' proxy that makes this work.
-    Upon instantiation of the proxy, it will have to add itself to the Units.proxy_units variable, because the encapsulated Units instance is not 'aware' that it will be proxied when it is created.
-    If this is implemented, it will become necessary to support proxies of proxies, which is currently not supported!
 
 TODO: test NRELUnits
 
@@ -45,6 +43,75 @@ TODO: test exponential units
 TODO: binomial units (read rate-coded RBMs paper http://www.cs.toronto.edu/~hinton/absps/nips00-ywt.pdf)
 
 TODO: poisson units
+
+TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
+
+TODO: Exact partition function calculation
+  - can this be formulated for a general RBM model easily?
+  - it should also be possible to select the type of units that is summed over numerically, as this is determines
+    the runtime of the computation.
+
+TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
+
+TODO: truncated exponential units
+    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
+
+TODO: two-way factored RBM from http://www.cs.utoronto.ca/~hinton/absps/netflixICML.pdf section 5
+  - see if it can be built
+  - maybe create an example for it
+
+TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
+
+TODO: in a conditional RBM (f.e. with visibles v, hiddens h and context x), CD won't work if the context variable isn't supplied. This is because CD will try to update the parameters tying h/v and x regardless of whether x was supplied as context. It would be nice if this didn't happen, i.e. when x is not supplied as context, all parameters tying x are simply ignored. This would also avoid some hard-to-decipher error messages. This would require knowledge about the dependencies in the RBM, so these dependencies would have to be specified on the Parameters.
+
+TODO: AIS
+- This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
+https://github.com/deeplearningais/CUV/tree/master/examples/rbm
+
+TODO: docs: explain how/why parameter tying works
+
+TODO: add docstrings everywhere
+ 
+TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
+  + convention: minibatch contributions are SUMMED rather than averaged.
+
+TODO: cleanup: remove some comments that are irrelevant
+
+TODO: docs: what are the different components and their roles, what are vmaps, umaps, dmaps, ..., and what are the interfaces the different components adhere to (f.e. the 'cd' keyword argument for samplers)
++ some common use cases + example usage for each feature (f.e. how to use momentum, how to construct a CD updater)
+
+
+====================
+
+BONUS:
+
+- mcRBM
+  - the deeplearning.net tutorials now include a tutorial for building the HMC sampler that was used for the visibles in this paper, and it looks pretty damn complicated. Don't waste time on this for now. 
+  - technically, an mcRBM isn't even an RBM!
+  - perhaps the samplers from MonteTheano can be of use?
+  - in 'Learning to represent visual input', Hinton gives a simple 'mean field' rule that also works, try to figure this out and implement it (it might require refactoring of cd_stats to allow 'plugging in' sampling strategies)
+
+- spike and slab RBMs
+  - these require a special sampling procedure (in 3 steps instead of 2) and are thus not compatible with cd_stats. It will probably be a challenge to fit these into the framework, if it's possible at all. Maybe abstracting out the sampling procedure from cd_stats is a good starting point? That way, maybe HMC could be used for the mcRBM as well.
+  - in this code that was used for the paper: https://bitbucket.org/gdesjardins/ssrbm_utlc/src/d54c0e410964/pssrbm.py
+    s and h (the latent variables) are sampled given only v. This means that the dependence between s and h can be ignored for practical purposes, which DOES make it compatible with cd_stats, in theory...
+
+
+====================
+
+
+
+
+
+
+TODO: write some proper automated tests
+
+TODO: combining softmaxunits with the convolutional parameters is impossible, because they both require a different tensor shape.
+    - convolution requires: (minibatches, maps, width, height)
+    - softmax requires: (minibatches, units, states)
+    investigate if it is possible to write a 'ReshapedUnits' proxy that makes this work.
+    Upon instantiation of the proxy, it will have to add itself to the Units.proxy_units variable, because the encapsulated Units instance is not 'aware' that it will be proxied when it is created.
+    If this is implemented, it will become necessary to support proxies of proxies, which is currently not supported!
 
 RBMGraph:
     - a directed acyclic graph (DAG) where the nodes are RBMs
@@ -96,52 +163,16 @@ dE/dR = dE/dv*dv/dR. Since v = Rx, dv/dR is easy. dE/dv is also fairly easy. One
 - Calculate dE/dv and act_v for a gaussian-binary RBM and compare.
 - Think about how this could be incorporated.
 
-TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
-
-TODO: Exact partition function calculation
-  - can this be formulated for a general RBM model easily?
-  - it should also be possible to select the type of units that is summed over numerically, as this is determines
-    the runtime of the computation.
-
-TODO: reconstruction cost is worthless for PCD, so if we're going to have PCD we'll also need something like pseudo-likelihood. Also adapt test_mnist_persistent.py to use this new measure. This requires free energy to be implemented.
-
-TODO: two-way factored RBM from http://www.cs.utoronto.ca/~hinton/absps/netflixICML.pdf section 5
-
 - the ICASSP 2010 paper "PHONE RECOGNITION USING RESTRICTED BOLTZMANN MACHINES" by Mohamed & Hinton trains using an unsupervised gradient+unsupervised gradient combination. Try to implement an example using this technique, for example digit classification on MNIST. The idea is to combine the standard CD gradient where the label unit is seen as context, with p(l|v) which can be computed from the p(v,l)'s (since #l is finite and small) which in turn are exp(FE(v,l)).
     * would be nice to write this as general as possible, so it can work for any RBM with a label unit or a set of label units. Note that summing over the labels can only be done numerically (by enumerating them), it's not doable to integrate them out analytically.
-
-TODO: consider implementing 'factors' as standalone elements. Using the 'message passing' interpretation this might even be easy. And it would make implementing factored Nth order RBMs a breeze (although I'm not sure if that's useful), and allow for 'convolutional factored' models etc.
-
-TODO: truncated exponential units
-    - free energy term is: -sum_j(log((exp(d*a_j) - 1)/a_j)) for distribution TEXP(a_j, d) (a_j is the linear activation of hidden unit h_j).
     
-TODO: passen autoencoders ook binnen dit raamwerk? mss moeten bepaalde dingen dan hernoemd worden...
-
-TODO: docs: what are the different components and their roles, what are vmaps, umaps, dmaps, ..., and what are the interfaces the different components adhere to (f.e. the 'cd' keyword argument for samplers)
-+ some common use cases + example usage for each feature (f.e. how to use momentum, how to construct a CD updater)
-
-TODO: cleanup: remove some comments that are irrelevant
-
 TODO: optimised 1D convolution: visible_maps naar filter height, data (time) naar filter width
     
 TODO: test 1D convolution
-
-TODO: dat FCRBM model voor modeling motion style eens proberen nabouwen!
  
 TODO: symmetric beta units (will have two proxies log(u) and log(1-u), and require hiddens with proxies for 1-...) - will need a beta sampler. Maybe MonteTheano has one?
 
-TODO: in a conditional RBM (f.e. with visibles v, hiddens h and context x), CD won't work if the context variable isn't supplied. This is because CD will try to update the parameters tying h/v and x regardless of whether x was supplied as context. It would be nice if this didn't happen, i.e. when x is not supplied as context, all parameters tying x are simply ignored. This would also avoid some hard-to-decipher error messages. This would require knowledge about the dependencies in the RBM, so these dependencies would have to be specified on the Parameters.
-
 TODO: supervised finetuning - how does this fit in the framework (separate trainers and updaters?)
-
-TODO: add docstrings everywhere
- 
-TODO: docs: explain the need for supplying an 'initial vmap' (for stats, but also for training)
-  + convention: minibatch contributions are SUMMED rather than averaged.
-  
-TODO: docs: explain how/why parameter tying works
-
-TODO: AIS
 
 TODO: maybe Tempered MCMC http://www.iro.umontreal.ca/~lisa/pointeurs/tempered_tech_report2009.pdf
 
@@ -165,31 +196,6 @@ TODO: model visualisation plugin using pydot? rbm.draw() or something.
   It would plot the dependencies and the Parameters objects affecting those dependencies. (this way it will also work sensibly for third order etc.)
 
 TODO: once some proper experiments have been set up, profile things (ProfileMode).
-
-
-
-- This might also be interesting to have a look at, it has a PCD implementation (and also some other stuff like AIS) in Python + cuv:
-https://github.com/deeplearningais/CUV/tree/master/examples/rbm
-
-- Interesting train of thought: consider an RBM being trained for classification. Typically, it is pretrained unsupervisedly first, and then finetuned supervisedly. It is, however, also possible to combine both gradients and do both at once. This is suggested as future work in 'Training RBMs using approximations to the likelihood gradient' (PCD paper), so find out if they have done this yet.
-When both gradients are combined, it would make sense to put the emphasis on the unsupervised gradient at the start, and more on the supervised gradient at the end. That means the weights of the respective gradients (in practice: the scale factors of the ParamUpdaters) vary during training.
-Another use case where this would happen is when a variable (f.e. linearly decaying) learning rate is used.
-To support these use cases, it has to be possible to use shared Theano variables as scale factors for ParamUpdaters. (The learning rate is precisely such a scale factor.) This makes it possible to update their values every epoch, or even every training step.
-In fact, generally, it would be cool if any 'metaparameter' could be symbolic.
-Theoretically this should already be possible, but it's a good idea to actually try some of these things and see if anything is still missing to support this.
-    - the ICASSP 2010 paper "PHONE RECOGNITION USING RESTRICTED BOLTZMANN MACHINES" by Mohamed & Hinton does this kind of supervised+unsupervised combination, but in an unusual way. It's worth investigating whether this can be made to fit in the framework.
-
-- mcRBM
-  - the deeplearning.net tutorials now include a tutorial for building the HMC sampler that was used for the visibles in this paper, and it looks pretty damn complicated. Don't waste time on this for now. 
-  - technically, an mcRBM isn't even an RBM!
-  - perhaps the samplers from MonteTheano can be of use?
-  - in 'Learning to represent visual input', Hinton gives a simple 'mean field' rule that also works, try to figure this out and implement it (it might require refactoring of cd_stats to allow 'plugging in' sampling strategies)
-
-- spike and slab RBMs
-  - these require a special sampling procedure (in 3 steps instead of 2) and are thus not compatible with cd_stats. It will probably be a challenge to fit these into the framework, if it's possible at all. Maybe abstracting out the sampling procedure from cd_stats is a good starting point? That way, maybe HMC could be used for the mcRBM as well.
-  - in this code that was used for the paper: https://bitbucket.org/gdesjardins/ssrbm_utlc/src/d54c0e410964/pssrbm.py
-    s and h (the latent variables) are sampled given only v. This means that the dependence between s and h can be ignored for practical purposes, which DOES make it compatible with cd_stats, in theory...
-
 
 - a nice (binary) MNIST alternative: http://www.cs.ubc.ca/~bmarlin/data.shtml
 

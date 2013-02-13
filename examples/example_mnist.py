@@ -40,14 +40,15 @@ valid_set_x = valid_set_x[:1000]
 
 n_visible = train_set_x.shape[1]
 n_hidden = 100 # 500
-mb_size = 20
+mb_size = 100
 k = 1 # 15
-learning_rate = 0.02 # 0.1
-epochs = 15
+learning_rate = 0.001 # 0.1
+epochs = 1000
 
 
 print ">> Constructing RBM..."
 rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
+#rbm = rbms.TruncExpBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
 # try to calculate weight updates using CD stats

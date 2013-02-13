@@ -27,8 +27,8 @@ class BinaryUnits(Units):
     def log_prob_from_activation(self, vmap, activation_vmap):
         # the log probability mass function is actually the  negative of the
         # cross entropy between the unit values and the activations
-        return vmap[self] * T.log(activation_vmap[self]) + (1 - vmap[self]) * T.log(1 - activation_vmap[self])
-  
+        p = self.success_probability_from_activation(activation_vmap)
+        return vmap[self] * T.log(p) + (1 - vmap[self]) * T.log(1 - p)
   
 class GaussianPrecisionProxyUnits(ProxyUnits):
     def __init__(self, rbm, units, name=None):

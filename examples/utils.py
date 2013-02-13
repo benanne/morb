@@ -59,5 +59,41 @@ def load_mnist():
     train_set, valid_set, test_set = cPickle.load(f)
     f.close()
     return train_set, valid_set, test_set
+    
+    
+
+def most_square_shape(num_blocks, blockshape=(1,1)):
+    x, y = blockshape
+    num_x = np.ceil(np.sqrt(num_blocks * y / float(x)))
+    num_y = np.ceil(num_blocks / num_x)
+    return (num_x, num_y)  
+    
+    
+    
+def visualise_filters(data, dim=6, posneg=True):
+    """
+    input: a (dim*dim) x H matrix, which is reshaped into filters
+    """
+    num_x, num_y = most_square_shape(data.shape[1], (dim, dim))
+    
+    #pad with zeros so that the number of filters equals num_x * num_y
+    padding = np.zeros((dim*dim, num_x*num_y - data.shape[1]))
+    data_padded = np.hstack([data, padding])
+    
+    data_split = data_padded.reshape(dim, dim, num_x, num_y)
+    
+    data_with_border = np.zeros((dim+1, dim+1, num_x, num_y))
+    data_with_border[:dim, :dim, :, :] = data_split
+    
+    filters = data_with_border.transpose(2,0,3,1).reshape(num_x*(dim+1), num_y*(dim+1))
+    
+    filters_with_left_border = np.zeros((num_x*(dim+1)+1, num_y*(dim+1)+1))
+    filters_with_left_border[1:, 1:] = filters
+    
+    if posneg:
+        m = np.abs(data).max()
+        plt.imshow(filters_with_left_border, interpolation='nearest', cmap=plt.cm.RdBu, vmin=-m, vmax=m)
+    else:
+        plt.imshow(filters_with_left_border, interpolation='nearest', cmap=plt.cm.binary, vmin = data.min(), vmax=data.max())
 
 

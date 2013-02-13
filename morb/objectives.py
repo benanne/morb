@@ -1,17 +1,72 @@
 import theano
 import theano.tensor as T
 
-def autoencoder(rbm, vmap, visible_units, hidden_units, context_units=[]):
-    """
-    Takes an RBM that consists only of units that implement mean field.
-    The means of these units will be treated as activations of an autoencoder.
+
+#def autoencoder(rbm, vmap, visible_units, hidden_units, context_units=[]):
+#    """
+#    Takes an RBM that consists only of units that implement mean field.
+#    The means of these units will be treated as activations of an autoencoder.
+#    
+#    Note that this can only be used for autoencoders with tied weights.
+#    
+#    input
+#    rbm: the RBM object
+#    vmap: a vmap dictionary of input units instances of the RBM mapped to theano expressions.
+#    visible_units: a list of input units, the autoencoder will attempt to reconstruct these
+#    hidden_units: the hidden layer of the autoencoder
+#    
+#    context units should simply be added in the vmap, they need not be specified.
+#    
+#    output
+#    a vmap dictionary giving the reconstructions.
+#    """
+#    
+#    # complete units lists
+#    visible_units = rbm.complete_units_list(visible_units)
+#    hidden_units = rbm.complete_units_list(hidden_units)
+#    
+#    # complete the supplied vmap
+#    vmap = rbm.complete_vmap(vmap)
+#    
+#    hidden_vmap = rbm.mean_field(hidden_units, vmap)
+#    hidden_vmap.update(vmap) # we can just add the supplied vmap to the hidden vmap to
+#    # ensure that any context units are also in the hidden vmap. We do not run the risk
+#    # of 'overwriting' anything since the hiddens and the visibles are disjoint.
+#    # note that the hidden vmap need not be completed, since the hidden_units list
+#    # has already been completed.
+#    reconstruction_vmap = rbm.mean_field(visible_units, hidden_vmap)
+#    
+#    return reconstruction_vmap
     
-    Note that this can only be used for autoencoders with tied weights.
+def autoencoder(rbm, v0_vmap, visible_units, hidden_units):
+    """
+    Implements the autoencoder objective: the log likelihood of the visibles given the hiddens,
+    where the hidden values are obtained using mean field.
+    """
+
+    # TODO: ProxyUnits support (i.e. vmap completion) is currently missing. add this.
+    # TODO: figure out if anything needs to be added to support context units (just leaving them out of the visibles and hiddens should suffice?)
+
+    # add the conditional means for the hidden units to the vmap
+    full_vmap = v0_vmap.copy()
+    for hu in hidden_units:
+        full_vmap[hu] = hu.mean_field(v0_vmap)
+    
+    # get log probs of all the visibles and take the mean.
+    total_log_prob = sum(T.sum(T.mean(vu.log_prob(full_vmap), 0)) for vu in visible_units) # mean over the minibatch dimension
+    
+    return total_log_prob
+    
+
+def mean_reconstruction(rbm, v0_vmap, visible_units, hidden_units):   
+    """
+    Computes the mean reconstruction for a given RBM and a set of visibles and hiddens.
+    E[v|h] with h = E[h|v].
     
     input
     rbm: the RBM object
     vmap: a vmap dictionary of input units instances of the RBM mapped to theano expressions.
-    visible_units: a list of input units, the autoencoder will attempt to reconstruct these
+    visible_units: a list of input units
     hidden_units: the hidden layer of the autoencoder
     
     context units should simply be added in the vmap, they need not be specified.
@@ -25,10 +80,10 @@ def autoencoder(rbm, vmap, visible_units, hidden_units, context_units=[]):
     hidden_units = rbm.complete_units_list(hidden_units)
     
     # complete the supplied vmap
-    vmap = rbm.complete_vmap(vmap)
+    v0_vmap = rbm.complete_vmap(v0_vmap)
     
-    hidden_vmap = rbm.mean_field(hidden_units, vmap)
-    hidden_vmap.update(vmap) # we can just add the supplied vmap to the hidden vmap to
+    hidden_vmap = rbm.mean_field(hidden_units, v0_vmap)
+    hidden_vmap.update(v0_vmap) # we can just add the supplied vmap to the hidden vmap to
     # ensure that any context units are also in the hidden vmap. We do not run the risk
     # of 'overwriting' anything since the hiddens and the visibles are disjoint.
     # note that the hidden vmap need not be completed, since the hidden_units list
@@ -68,7 +123,3 @@ def cross_entropy(units_list, vmap_targets, vmap_predictions):
 # - contractive autoencoder penalty
 # - denoising autoencoder? add some methods to 'noisify' a data vmap in different way (gaussian, truncate components, ..) see dA deep learning tutorial for some code
 # - facilitate supervised training
-
-# TODO: any clean way to make autoencoders work if weights aren't tied? 
-# what about more exotic activation functions? having to create units instances 
-# for them is a bit hackish...
