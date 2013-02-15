@@ -1,7 +1,9 @@
 TODO: autoencoders
-    - support for ProxyUnits
-    - support for context units
     - implement denoising regularisation, CE-based sparsity, contractive regularisation
+
+    
+    - test the varautoencoder to see if the proxy units support works correctly
+    - test a conditional autoencoder to see if the context units support works correctly
 
 TODO: score matching
     - implicit score matching
@@ -11,6 +13,7 @@ TODO: score matching
 TODO: truncated exponential sampler fails for large lambda (in magnitude) and for lambda = 0. These cases can occur... fix this.
     
 TODO: add a general purpose 'autoencoder' updater which can use a custom error measure (which would be MSE or CE in the most common case), not just the 'natural' one associated with the RBM. This would be useful to build autoencoders with NReLUs for example.
+  - objective = reconstruction + error measure
 
 TODO: implement free energy for gaussian units with fixed variance (already computed, see lyxfile)
 
@@ -103,6 +106,9 @@ BONUS:
 
 
 
+autoencoder.mean_reconstruction returns a vmap which contains more than just the requested visible_units. It also includes proxy units.
+This can lead to unexpected behaviour when the vmap is iterated over. It may be worth considering to remove the spurious unit sets from the vmap.
+This issue may occur in other places of the code as well. If something is done about it, look for those too!
 
 TODO: write some proper automated tests
 

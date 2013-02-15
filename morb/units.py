@@ -246,6 +246,34 @@ class GammaUnits(Units):
         a2 = self.log_units.activation(vmap)
         return self.sample_from_activation({ self: a1, self.log_units: a2 })
 
+    def k_from_activation(self, vmap):
+        a2 = vmap[self.log_units]
+        return a2 + 1
+
+    def k(self, vmap):
+        a1 = self.activation(vmap
+)
+        a2 = self.log_units.activation(vmap)
+        return self.k_from_activation({ self: a1, self.log_units: a2 })        
+
+    def theta_from_activation(self, vmap):
+        a1 = vmap[self]
+        return -1.0 / a1
+
+    def theta(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.log_units.activation(vmap)
+        return self.theta_from_activation({ self: a1, self.log_units: a2 })     
+
+    def mean_from_activation(self, vmap):
+        k = self.k_from_activation(vmap)
+        theta = self.theta_from_activation(vmap)
+        return k * theta
+
+    def mean(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.log_units.activation(vmap)
+        return self.mean_from_activation({ self: a1, self.log_units: a2 })     
 
 
 

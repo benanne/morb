@@ -44,13 +44,13 @@ def autoencoder(rbm, v0_vmap, visible_units, hidden_units):
     where the hidden values are obtained using mean field.
     """
 
-    # TODO: ProxyUnits support (i.e. vmap completion) is currently missing. add this.
-    # TODO: figure out if anything needs to be added to support context units (just leaving them out of the visibles and hiddens should suffice?)
-
+    full_vmap = rbm.complete_vmap(v0_vmap)
     # add the conditional means for the hidden units to the vmap
-    full_vmap = v0_vmap.copy()
     for hu in hidden_units:
         full_vmap[hu] = hu.mean_field(v0_vmap)
+
+    # add any missing proxies of the hiddens (unlikely, but you never know)
+    full_vmap = rbm.complete_vmap(full_vmap)
     
     # get log probs of all the visibles and take the mean.
     total_log_prob = sum(T.sum(T.mean(vu.log_prob(full_vmap), 0)) for vu in visible_units) # mean over the minibatch dimension
@@ -73,6 +73,10 @@ def mean_reconstruction(rbm, v0_vmap, visible_units, hidden_units):
     
     output
     a vmap dictionary giving the reconstructions.
+
+    NOTE: this vmap may contain more than just the requested values, because the 'visible_units'
+    units list is completed with all proxies. So it's probably not a good idea to iterate over
+    the output vmap.
     """
     
     # complete units lists
