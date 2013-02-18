@@ -1,6 +1,8 @@
 import theano
 import theano.tensor as T
 
+import samplers
+
 
 #def autoencoder(rbm, vmap, visible_units, hidden_units, context_units=[]):
 #    """
@@ -39,6 +41,8 @@ import theano.tensor as T
 #    return reconstruction_vmap
     
 
+
+### autoencoder objective + utilities ###
 
 def autoencoder(rbm, visible_units, hidden_units, v0_vmap, v0_vmap_source=None):
     """
@@ -113,6 +117,24 @@ def mean_reconstruction(rbm, visible_units, hidden_units, v0_vmap):
 
 
 
+
+### input corruption ###
+
+def corrupt_masking(v, corruption_level):
+    return samplers.theano_rng.binomial(size=v.shape, n=1, p=1 - corruption_level, dtype=theano.config.floatX) * v
+
+def corrupt_salt_and_pepper(v, corruption_level):
+    mask = samplers.theano_rng.binomial(size=v.shape, n=1, p=1 - corruption_level, dtype=theano.config.floatX)
+    rand = samplers.theano_rng.binomial(size=v.shape, n=1, p=0.5, dtype=theano.config.floatX)
+    return mask * v + (1 - mask) * rand
+
+def corrupt_gaussian(v, std):
+    noise = samplers.theano_rng.normal(size=v.shape, avg=0.0, std=std, dtype=theano.config.floatX)
+    return v + noise
+
+
+
+### common error measures ###
 
 def mse(units_list, vmap_targets, vmap_predictions):
     """

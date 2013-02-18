@@ -43,17 +43,22 @@ mb_size = 100
 k = 1 # 15
 learning_rate = 0.1 # 0.1 # 0.02 # 0.1
 epochs = 500
+corruption_level = 0.3
 
 
 print ">> Constructing RBM..."
 # rbm = rbms.GaussianBinaryRBM(n_visible, n_hidden)
 rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
 # rbm = rbms.TruncExpBinaryRBM(n_visible, n_hidden)
-initial_vmap = { rbm.v: T.matrix('v') }
+
+v = T.matrix('v')
+v_corrupted = objectives.corrupt_masking(v, corruption_level)
+initial_vmap = { rbm.v: v }
+initial_vmap_corrupted = { rbm.v: v_corrupted }
 
 print ">> Constructing autoencoder updaters..."
-autoencoder_objective = objectives.autoencoder(rbm, visible_units=[rbm.v], hidden_units=[rbm.h], initial_vmap)
-reconstruction = objectives.mean_reconstruction(rbm, visible_units=[rbm.v], hidden_units=[rbm.h], initial_vmap)
+autoencoder_objective = objectives.autoencoder(rbm, [rbm.v], [rbm.h], initial_vmap, initial_vmap_corrupted)
+reconstruction = objectives.mean_reconstruction(rbm, [rbm.v], [rbm.h], initial_vmap_corrupted)
 
 umap = {}
 for var in rbm.variables:

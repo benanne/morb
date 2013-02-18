@@ -12,7 +12,7 @@ class MinibatchTrainer(Trainer):
         # this is interesting when one wants to evaluate training progress on a validation set, for example.
         # then the variables will not be updated, but there might still be updates from scan operations
         # for example, so we still have to fetch them!
-        updates = self.get_theano_updates(initial_vmap, train) 
+        updates = self.get_theano_updates(train) 
         
         # initialise data sets
         data_sets = {}

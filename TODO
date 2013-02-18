@@ -1,12 +1,10 @@
 TODO: autoencoders
-    - denoising:
-      * write some helper functions to generate corrupted input data (operate on vmaps! gaussian, truncate components, ..) see dA deep learning tutorial for some code
-      * create an example file that trains a denoising autoencoder
     - CE-based sparsity
     - contractive penalty
 
-
 TODO: implement gamma units with fixed scale
+
+
 
 TODO: test autoencoder for exotic RBMs
     - test the varautoencoder to see if the proxy units support works correctly
@@ -16,6 +14,8 @@ TODO: score matching
     - implicit score matching
     - denoising score matching
     - ratio matching
+
+TODO: update code to use OrderedDict for update dictionaries.
     
 TODO: truncated exponential sampler fails for large lambda (in magnitude) and for lambda = 0. These cases can occur... fix this.
     

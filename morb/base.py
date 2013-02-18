@@ -245,7 +245,7 @@ class Trainer(object):
         self.rbm = rbm
         self.umap = umap
 
-    def get_theano_updates(self, vmap, train=True):
+    def get_theano_updates(self, train=True):
         theano_updates = {}
         # collect stats
         stats_list = _unique([s for pu in self.umap.values() for s in pu.stats_list]) # cannot use set() here because dicts are not hashable.
