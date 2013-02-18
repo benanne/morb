@@ -1,7 +1,14 @@
 TODO: autoencoders
-    - implement denoising regularisation, CE-based sparsity, contractive regularisation
+    - denoising:
+      * write some helper functions to generate corrupted input data (operate on vmaps! gaussian, truncate components, ..) see dA deep learning tutorial for some code
+      * create an example file that trains a denoising autoencoder
+    - CE-based sparsity
+    - contractive penalty
 
-    
+
+TODO: implement gamma units with fixed scale
+
+TODO: test autoencoder for exotic RBMs
     - test the varautoencoder to see if the proxy units support works correctly
     - test a conditional autoencoder to see if the context units support works correctly
 
@@ -17,15 +24,11 @@ TODO: add a general purpose 'autoencoder' updater which can use a custom error m
 
 TODO: implement free energy for gaussian units with fixed variance (already computed, see lyxfile)
 
-TODO: write an example that trains an autoencoder
+TODO: Parameters.energy_gradient gives the NEGATIVE of the energy gradient. Either rename this method, or fix this (and take the negative wherever it is used)
 
 TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
 
-TODO: Parameters.energy_gradient gives the NEGATIVE of the energy gradient. Either rename this method, or fix this (and take the negative wherever it is used)
-
 TODO: current minibatchtrainer isn't efficient when multiple functions are compiled - the shared variables for the data are recreated for each function. Find a better way of implementing this. Also, it would be good if the 'updates' could be made accessible somehow, which is useful to diagnose problems. I guess this whole class needs to be rethought a bit.
-
-TODO: consider introducing a new object that encapsulates an RBM and a division into visible/hidden/context units. This could be used to simplify the cd_stats and the AutoencoderUpdater code, and reduce code duplication.
 
 TODO: mapping a vmap onto an activation vmap is a common operation for Units, it would be good if there were a method for this, with a short name.
     it has to be overridable, for unit types that have proxies (learntprecisiongaussian for example)
@@ -48,6 +51,8 @@ TODO: binomial units (read rate-coded RBMs paper http://www.cs.toronto.edu/~hint
 TODO: poisson units
 
 TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
+
+TODO: consider introducing a new object that encapsulates an RBM and a division into visible/hidden/context units. This could be used to simplify the cd_stats and the AutoencoderUpdater code, and reduce code duplication.
 
 TODO: Exact partition function calculation
   - can this be formulated for a general RBM model easily?

@@ -38,27 +38,42 @@ import theano.tensor as T
 #    
 #    return reconstruction_vmap
     
-def autoencoder(rbm, v0_vmap, visible_units, hidden_units):
+
+
+def autoencoder(rbm, visible_units, hidden_units, v0_vmap, v0_vmap_source=None):
     """
     Implements the autoencoder objective: the log likelihood of the visibles given the hiddens,
     where the hidden values are obtained using mean field.
-    """
 
+    The last argument, v0_vmap_source, allows for using inputs that are different than the targets.
+    This is useful for implementing denoising regularisation.
+    """
+    if v0_vmap_source is None:
+        v0_vmap_source = v0_vmap # default to using the same input as source and target
+
+    full_vmap_source = rbm.complete_vmap(v0_vmap_source)
     full_vmap = rbm.complete_vmap(v0_vmap)
     # add the conditional means for the hidden units to the vmap
     for hu in hidden_units:
-        full_vmap[hu] = hu.mean_field(v0_vmap)
+        full_vmap_source[hu] = hu.mean_field(v0_vmap_source)
 
     # add any missing proxies of the hiddens (unlikely, but you never know)
-    full_vmap = rbm.complete_vmap(full_vmap)
-    
-    # get log probs of all the visibles and take the mean.
-    total_log_prob = sum(T.sum(T.mean(vu.log_prob(full_vmap), 0)) for vu in visible_units) # mean over the minibatch dimension
+    full_vmap_source = rbm.complete_vmap(full_vmap_source)
+
+    # get log probs of all the visibles
+    log_prob_terms = []
+    for vu in visible_units:
+        activation_vmap_source = { vu: vu.activation(full_vmap_source) }
+        lp = vu.log_prob_from_activation(full_vmap, activation_vmap_source)
+        log_prob_terms.append(T.sum(T.mean(lp, 0))) # mean over the minibatch dimension
+
+    total_log_prob = sum(log_prob_terms)
     
     return total_log_prob
-    
 
-def mean_reconstruction(rbm, v0_vmap, visible_units, hidden_units):   
+
+
+def mean_reconstruction(rbm, visible_units, hidden_units, v0_vmap):   
     """
     Computes the mean reconstruction for a given RBM and a set of visibles and hiddens.
     E[v|h] with h = E[h|v].
@@ -98,6 +113,7 @@ def mean_reconstruction(rbm, v0_vmap, visible_units, hidden_units):
 
 
 
+
 def mse(units_list, vmap_targets, vmap_predictions):
     """
     Computes the mean square error between two vmaps representing data
@@ -123,7 +139,3 @@ def cross_entropy(units_list, vmap_targets, vmap_predictions):
     return sum((- t[u] * T.log(p[u]) - (1 - t[u]) * T.log(1 - p[u])) for u in units_list)
 
     
-# TODO: add objectives:
-# - contractive autoencoder penalty
-# - denoising autoencoder? add some methods to 'noisify' a data vmap in different way (gaussian, truncate components, ..) see dA deep learning tutorial for some code
-# - facilitate supervised training
