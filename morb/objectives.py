@@ -117,6 +117,36 @@ def mean_reconstruction(rbm, visible_units, hidden_units, v0_vmap):
 
 
 
+### regularisation ###
+
+def sparsity_penalty(rbm, visible_units, hidden_units, v0_vmap, target):
+    """
+    Implements a cross-entropy sparsity penalty. Note that this only really makes sense if the hidden units are binary.
+    """
+    # complete units lists
+    visible_units = rbm.complete_units_list(visible_units)
+    hidden_units = rbm.complete_units_list(hidden_units)
+    
+    # complete the supplied vmap
+    v0_vmap = rbm.complete_vmap(v0_vmap)
+    
+    hidden_vmap = rbm.mean_field(hidden_units, v0_vmap)
+
+    penalty_terms = []
+    for hu in hidden_units:
+        mean_activation = T.mean(hidden_vmap[hu], 0) # mean over minibatch dimension
+        penalty_terms.append(T.sum(T.nnet.binary_crossentropy(mean_activation, target))) # sum over the features
+
+    total_penalty = sum(penalty_terms)
+    return total_penalty
+
+
+def contractive_penalty():
+    pass # TODO
+
+# TODO: contractivity
+
+
 
 ### input corruption ###
 

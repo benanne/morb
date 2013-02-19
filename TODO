@@ -1,6 +1,14 @@
 TODO: autoencoders
-    - CE-based sparsity
-    - contractive penalty
+    - test sparsity penalty
+    - implement contractive penalty
+      * general version with theano.gradient.jacobian
+      * faster version specifically for binary units.
+         see https://github.com/lisa-lab/DeepLearningTutorials/blob/master/code/cA.py
+    - test contractive penalty,  compare general and binary-specific version in terms of speed
+
+
+TODO: hinton suggests to estimate the current mean activity of the units as an exponential average over past minibatches. Is it feasible to implement this? Would need a variable to store the previous value, but I guess that's doable with Theano updates.
+  - this affects both the sparsity penalty for autoencoders and the SparsityUpdater.
 
 TODO: implement gamma units with fixed scale
 
