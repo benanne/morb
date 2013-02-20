@@ -3,8 +3,6 @@ TODO: hinton suggests to estimate the current mean activity of the units as an e
 
 TODO: implement gamma units with fixed scale
 
-
-
 TODO: test autoencoder for exotic RBMs
     - test the varautoencoder to see if the proxy units support works correctly
     - test a conditional autoencoder to see if the context units support works correctly

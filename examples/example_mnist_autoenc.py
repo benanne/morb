@@ -43,7 +43,9 @@ mb_size = 100
 k = 1 # 15
 learning_rate = 0.1 # 0.1 # 0.02 # 0.1
 epochs = 500
-corruption_level = 0.3
+corruption_level = 0.0 # 0.3
+sparsity_penalty = 0.1 # 0.0
+sparsity_target = 0.05
 
 
 print ">> Constructing RBM..."
@@ -59,6 +61,8 @@ initial_vmap_corrupted = { rbm.v: v_corrupted }
 print ">> Constructing autoencoder updaters..."
 autoencoder_objective = objectives.autoencoder(rbm, [rbm.v], [rbm.h], initial_vmap, initial_vmap_corrupted)
 reconstruction = objectives.mean_reconstruction(rbm, [rbm.v], [rbm.h], initial_vmap_corrupted)
+
+autoencoder_objective += sparsity_penalty * objectives.sparsity_penalty(rbm, [rbm.h], initial_vmap, sparsity_target)
 
 umap = {}
 for var in rbm.variables:
