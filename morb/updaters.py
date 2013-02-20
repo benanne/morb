@@ -129,6 +129,7 @@ class GradientUpdater(Updater):
         return self.theano_updates
         
         
+
 class ImplicitScoreMatchingUpdater(Updater):
     """
     implements the implicit version of the score matching objective, an alternative to

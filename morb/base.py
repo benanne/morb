@@ -30,7 +30,11 @@ class Units(object):
         
     def free_energy_term_from_activation(self, vmap):
         raise NotImplementedError("Free energy calculation not supported for this Units instance: %s" % repr(self))
-            
+        
+    def log_prob_from_activation(self, vmap, activation_vmap):
+        raise NotImplementedError("Log-probability calculation not supported for this Units instance: %s" % repr(self))
+        # note that this gives the log probability density for continuous units, but the log probability mass for discrete ones.
+                
     def sample(self, vmap):
         return self.sample_from_activation({ self: self.activation(vmap) })
         
@@ -39,6 +43,10 @@ class Units(object):
         
     def free_energy_term(self, vmap):
         return self.free_energy_term_from_activation({ self: self.activation(vmap) })
+        
+    def log_prob(self, vmap):
+        activation_vmap = { self: self.activation(vmap) }
+        return self.log_prob_from_activation(vmap, activation_vmap)
         
     def __repr__(self):
         return "<morb:Units '%s'>" % self.name
@@ -237,7 +245,7 @@ class Trainer(object):
         self.rbm = rbm
         self.umap = umap
 
-    def get_theano_updates(self, vmap, train=True):
+    def get_theano_updates(self, train=True):
         theano_updates = {}
         # collect stats
         stats_list = _unique([s for pu in self.umap.values() for s in pu.stats_list]) # cannot use set() here because dicts are not hashable.

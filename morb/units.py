@@ -1,6 +1,7 @@
 from morb.base import Units, ProxyUnits
 from morb import samplers, activation_functions
 import theano.tensor as T
+import numpy as np
 
 
 class BinaryUnits(Units):
@@ -22,7 +23,12 @@ class BinaryUnits(Units):
         s = - T.nnet.softplus(vmap[self])
         # sum over all but the minibatch dimension
         return T.sum(s, axis=range(1, s.ndim))
-  
+        
+    def log_prob_from_activation(self, vmap, activation_vmap):
+        # the log probability mass function is actually the  negative of the
+        # cross entropy between the unit values and the activations
+        p = self.success_probability_from_activation(activation_vmap)
+        return vmap[self] * T.log(p) + (1 - vmap[self]) * T.log(1 - p)
   
 class GaussianPrecisionProxyUnits(ProxyUnits):
     def __init__(self, rbm, units, name=None):
@@ -48,6 +54,10 @@ class GaussianUnits(Units):
         
     def mean_field_from_activation(self, vmap):
         return vmap[self]
+
+    def log_prob_from_activation(self, vmap, activation_vmap):
+        return - np.log(np.sqrt(2*np.pi)) - ((vmap[self] - activation_vmap[self])**2 / 2.0)
+
 
 
 class LearntPrecisionGaussianProxyUnits(ProxyUnits):
@@ -95,6 +105,17 @@ class LearntPrecisionGaussianUnits(Units):
         a1 = self.activation(vmap)
         a2 = self.precision_units.activation(vmap)
         return self.sample_from_activation({ self: a1, self.precision_units: a2 })
+    
+    def log_prob(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.precision_units.activation(vmap)
+        activation_vmap = { self: a1, self.precision_units: a2 }
+        return self.log_prob_from_activation(vmap, activation_vmap)
+        
+    def log_prob_from_activation(self, vmap, activation_vmap):
+        var = self.variance_from_activation(activation_vmap)
+        mean = self.mean_from_activation(activation_vmap)
+        return - np.log(np.sqrt(2 * np.pi * var)) - ((vmap[self] - mean)**2 / (2.0 * var))
         
         
        
@@ -146,7 +167,10 @@ class TruncatedExponentialUnits(Units):
     def mean_field_from_activation(self, vmap):
         rate = self.rate_from_activation(vmap)
         return samplers.truncated_exponential_mean(rate)
-
+        
+    def log_prob_from_activation(self, vmap, activation_vmap):
+        rate = self.rate_from_activation(activation_vmap)
+        return T.log(rate) - rate * vmap[self] - T.log(1 - T.exp(-rate))
 
 
 class ExponentialUnits(Units):
@@ -162,6 +186,10 @@ class ExponentialUnits(Units):
         
     def mean_field_from_activation(self, vmap):
         return 1.0 / self.rate_from_activation(vmap)
+        
+    def log_prob_from_activation(self, vmap, activation_vmap):
+        rate = self.rate_from_activation(activation_vmap)
+        return T.log(rate) - rate * vmap[self]
         
         
 
@@ -218,6 +246,34 @@ class GammaUnits(Units):
         a2 = self.log_units.activation(vmap)
         return self.sample_from_activation({ self: a1, self.log_units: a2 })
 
+    def k_from_activation(self, vmap):
+        a2 = vmap[self.log_units]
+        return a2 + 1
+
+    def k(self, vmap):
+        a1 = self.activation(vmap
+)
+        a2 = self.log_units.activation(vmap)
+        return self.k_from_activation({ self: a1, self.log_units: a2 })        
+
+    def theta_from_activation(self, vmap):
+        a1 = vmap[self]
+        return -1.0 / a1
+
+    def theta(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.log_units.activation(vmap)
+        return self.theta_from_activation({ self: a1, self.log_units: a2 })     
+
+    def mean_from_activation(self, vmap):
+        k = self.k_from_activation(vmap)
+        theta = self.theta_from_activation(vmap)
+        return k * theta
+
+    def mean(self, vmap):
+        a1 = self.activation(vmap)
+        a2 = self.log_units.activation(vmap)
+        return self.mean_from_activation({ self: a1, self.log_units: a2 })     
 
 
 
