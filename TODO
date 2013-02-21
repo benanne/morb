@@ -1,6 +1,8 @@
 TODO: make a CIFAR-bw whitened patches dataset to use in examples, can probably copy it from projects/autoenc
 
-TODO: score matching
+TODO: denoising score matching
+    - current implementation is wrong. Updaters for the different parameters should share the same noise vectors.
+      implementing this correctly will require a stats object.
     - denoising score matching: test it on this CIFAR patches dataset
 
 

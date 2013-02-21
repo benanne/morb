@@ -131,41 +131,41 @@ class GradientUpdater(Updater):
 
 
 
-class DenoisingScoreMatchingUpdater(Updater):
-    """
-    implements the denoising version of the score matching objective, an alternative to
-    maximum likelihood that doesn't require an approximation of the partition function.
+# class DenoisingScoreMatchingUpdater(Updater):
+#     """
+#     implements the denoising version of the score matching objective, an alternative to
+#     maximum likelihood that doesn't require an approximation of the partition function.
 
-    This version uses a Gaussian kernel. Furthermore, it adds the scale factor 1/sigma**2
-    to the free energy of the model, as described in "A connection between score matching
-    and denoising autoencoders" by Vincent et al., such that it yields the denoising
-    autoencoder objective for a Gaussian-Bernoulli RBM.
+#     This version uses a Gaussian kernel. Furthermore, it adds the scale factor 1/sigma**2
+#     to the free energy of the model, as described in "A connection between score matching
+#     and denoising autoencoders" by Vincent et al., such that it yields the denoising
+#     autoencoder objective for a Gaussian-Bernoulli RBM.
     
-    This approach is only valid if the domain of the input is the real numbers. That means it
-    won't work for binary input units, or other unit types that don't define a distribution
-    on the entire real line. In practice, this is used almost exclusively with Gaussian
-    visible units.
+#     This approach is only valid if the domain of the input is the real numbers. That means it
+#     won't work for binary input units, or other unit types that don't define a distribution
+#     on the entire real line. In practice, this is used almost exclusively with Gaussian
+#     visible units.
 
-    std: noise level
-    """
-    def __init__(self, rbm, visible_units, hidden_units, v0_vmap, std):
-        noise_map = {}
-        noisy_vmap = {}
-        for vu in visible_units:
-            noise_map[vu] = samplers.theano_rng.normal(size=v0_vmap[vu].shape, avg=0.0, std=std, dtype=theano.config.floatX)
-            noisy_vmap[vu] = v0_vmap[vu] + noise_map[vu]
+#     std: noise level
+#     """
+#     def __init__(self, rbm, visible_units, hidden_units, v0_vmap, std):
+#         noise_map = {}
+#         noisy_vmap = {}
+#         for vu in visible_units:
+#             noise_map[vu] = samplers.theano_rng.normal(size=v0_vmap[vu].shape, avg=0.0, std=std, dtype=theano.config.floatX)
+#             noisy_vmap[vu] = v0_vmap[vu] + noise_map[vu]
 
-        free_energy = rbm.free_energy(hidden_units, noisy_vmap)
-        scores = [T.grad(free_energy, noisy_vmap[u]) for u in visible_units]
-        score_map = dict(zip(visible_units, scores))
+#         free_energy = rbm.free_energy(hidden_units, noisy_vmap)
+#         scores = [T.grad(free_energy, noisy_vmap[u]) for u in visible_units]
+#         score_map = dict(zip(visible_units, scores))
 
-        terms = []
-        for vu in visible_units:
-            terms.append(T.sum(T.mean((score_map[vu] + noise_map[vu]) ** 2, 0))) # mean over minibatches
+#         terms = []
+#         for vu in visible_units:
+#             terms.append(T.sum(T.mean((score_map[vu] + noise_map[vu]) ** 2, 0))) # mean over minibatches
 
-        self.update = sum(terms)
+#         self.update = sum(terms)
 
-    def get_update(self):
-        return self.update
+#     def get_update(self):
+#         return self.update
 
 
