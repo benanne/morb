@@ -1,16 +1,23 @@
-TODO: hinton suggests to estimate the current mean activity of the units as an exponential average over past minibatches. Is it feasible to implement this? Would need a variable to store the previous value, but I guess that's doable with Theano updates.
-  - this affects both the sparsity penalty for autoencoders and the SparsityUpdater.
+TODO: make a CIFAR-bw whitened patches dataset to use in examples, can probably copy it from projects/autoenc
+
+TODO: score matching
+    - denoising score matching: test it on this CIFAR patches dataset
+
 
 TODO: implement gamma units with fixed scale
+
+TODO: implement free energy for gaussian units with fixed variance (already computed, see lyxfile)
+
+TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
+
+TODO: implicit score matching: needs second derivatives (diagonal of the hessian). Kevin Swersky may have code for this so don't implement this yet.
+
+TODO: hinton suggests to estimate the current mean activity of the units as an exponential average over past minibatches. Is it feasible to implement this? Would need a variable to store the previous value, but I guess that's doable with Theano updates.
+  - this affects both the sparsity penalty for autoencoders and the SparsityUpdater.
 
 TODO: test autoencoder for exotic RBMs
     - test the varautoencoder to see if the proxy units support works correctly
     - test a conditional autoencoder to see if the context units support works correctly
-
-TODO: score matching
-    - implicit score matching
-    - denoising score matching
-    - ratio matching
 
 TODO: update code to use OrderedDict for update dictionaries.
     
@@ -19,11 +26,10 @@ TODO: truncated exponential sampler fails for large lambda (in magnitude) and fo
 TODO: add a general purpose 'autoencoder' updater which can use a custom error measure (which would be MSE or CE in the most common case), not just the 'natural' one associated with the RBM. This would be useful to build autoencoders with NReLUs for example.
   - objective = reconstruction + error measure
 
-TODO: implement free energy for gaussian units with fixed variance (already computed, see lyxfile)
 
 TODO: Parameters.energy_gradient gives the NEGATIVE of the energy gradient. Either rename this method, or fix this (and take the negative wherever it is used)
 
-TODO: Fast persistent CD (FPCD) (Tieleman) - this will require another stats function that also keeps internal state (the fast weights)
+
 
 TODO: current minibatchtrainer isn't efficient when multiple functions are compiled - the shared variables for the data are recreated for each function. Find a better way of implementing this. Also, it would be good if the 'updates' could be made accessible somehow, which is useful to diagnose problems. I guess this whole class needs to be rethought a bit.
 
@@ -48,8 +54,6 @@ TODO: binomial units (read rate-coded RBMs paper http://www.cs.toronto.edu/~hint
 TODO: poisson units
 
 TODO: make rbm.energy_gradient_for use theano's T.grad functionality by default. if we rely on that, it's quite easy to get the derivative of the energy function with respect to a given set of units. The automatic differentation should only be offered as a 'default' or 'fallback' for when the Parameters don't provide custom implementations of the gradients of the energy term with respect to the units.
-
-TODO: consider introducing a new object that encapsulates an RBM and a division into visible/hidden/context units. This could be used to simplify the cd_stats and the AutoencoderUpdater code, and reduce code duplication.
 
 TODO: Exact partition function calculation
   - can this be formulated for a general RBM model easily?
